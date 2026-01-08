@@ -142,8 +142,14 @@
             margin: 10px 0;
         }
         .user-checkbox-list label {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             padding: 5px 0;
+        }
+        .user-checkbox-list input[type="checkbox"] {
+            width: auto;
+            margin: 0;
         }
 
         /* Nav */
@@ -223,10 +229,18 @@
             background: var(--primary);
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 8px 10px;
             border-radius: 5px;
-            font-size: 11px;
+            font-size: 16px;
             cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .edit-task-btn:hover {
+            background: #3a7bc8;
         }
     </style>
 </head>
@@ -258,13 +272,17 @@
         <div class="card">
             <h4>Crear Tarea Global</h4>
             <input type="text" id="gt-title" placeholder="Título de la tarea">
+            <label style="font-size: 12px; color: #666; margin-top: 5px;">Fecha (opcional):</label>
             <input type="date" id="gt-date">
             
             <p style="margin: 10px 0 5px 0;"><strong>Asignar a:</strong></p>
             <div id="gt-user-assign" class="user-checkbox-list"></div>
 
             <div style="margin: 10px 0;">
-                <label><input type="checkbox" id="gt-repeat" onchange="toggleRepeat()"> ¿Se repite?</label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="gt-repeat" onchange="toggleRepeat()" style="width: auto; margin: 0;"> 
+                    ¿Se repite?
+                </label>
             </div>
 
             <div id="repeat-options" style="display:none;">
@@ -282,6 +300,11 @@
 
             <h4 style="margin-top: 15px;">Puntuaciones</h4>
             <div id="gt-scores"></div>
+            
+            <h4 style="margin-top: 15px;">Categorías</h4>
+            <input type="text" id="new-category" placeholder="Nueva categoría (ej: Puntualidad)">
+            <button class="secondary" onclick="addCategory()">+ Añadir Categoría</button>
+            
             <button onclick="saveGlobalTask()" style="margin-top:10px;">Crear Tareas</button>
         </div>
 
@@ -294,26 +317,31 @@
 
     <!-- Aplicación principal -->
     <div id="main-app" style="display:none;">
-        <div id="view-tasks" class="screen">
-            <h2 id="user-title">Tareas</h2>
-            <div id="tasks-container"></div>
+        <div style="position: fixed; top: 0; left: 0; right: 0; background: #fff; padding: 15px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 200; display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="user-title" style="margin: 0;">Tareas</h2>
+            <button class="danger small" onclick="logout()">Salir</button>
         </div>
 
-        <div id="view-calendar" class="screen">
-            <h2>Calendario</h2>
-            <div id="calendar-container"></div>
-        </div>
+        <div style="padding-top: 70px;">
+            <div id="view-tasks" class="screen">
+                <div id="tasks-container"></div>
+            </div>
 
-        <div id="view-scores" class="screen">
-            <h2>Mi Puntuación</h2>
-            <div id="scores-container"></div>
+            <div id="view-calendar" class="screen">
+                <h3 style="margin-top: 0;">Calendario</h3>
+                <div id="calendar-container"></div>
+            </div>
+
+            <div id="view-scores" class="screen">
+                <h3 style="margin-top: 0;">Mi Puntuación</h3>
+                <div id="scores-container"></div>
+            </div>
         </div>
 
         <nav class="nav-bottom">
             <button class="nav-btn" onclick="showView('view-tasks')">Tareas</button>
             <button class="nav-btn" onclick="showView('view-calendar')">Calendario</button>
             <button class="nav-btn" onclick="showView('view-scores')">Puntos</button>
-            <button class="nav-btn" onclick="logout()">Salir</button>
         </nav>
     </div>
 
@@ -340,7 +368,10 @@
             <input type="date" id="edit-task-date">
             
             <div style="margin: 10px 0;">
-                <label><input type="checkbox" id="edit-task-repeat" onchange="toggleEditRepeat()"> ¿Se repite?</label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="edit-task-repeat" onchange="toggleEditRepeat()" style="width: auto; margin: 0;"> 
+                    ¿Se repite?
+                </label>
             </div>
 
             <div id="edit-repeat-options" style="display:none;">
@@ -456,13 +487,22 @@
                 const firstTask = tasks[0];
                 const assignedUsers = db.users.filter(u => tasks.some(t => t.userId === u.id)).map(u => u.name).join(', ');
                 
+                // Ordenar días empezando por lunes
+                const dayOrder = [1, 2, 3, 4, 5, 6, 0]; // L, M, X, J, V, S, D
+                const daysText = firstTask.isRepeat ? 
+                    dayOrder
+                        .filter(d => firstTask.repeatDays.includes(d))
+                        .map(d => dayNamesShort[d])
+                        .join(', ') 
+                    : '';
+                
                 container.innerHTML += `
-                    <div class="card admin-task-card" style="position: relative;">
-                        <button class="edit-task-btn" onclick="openEditTaskModal('${groupId}')">✏️ Editar</button>
+                    <div class="card admin-task-card" style="position: relative; padding-right: 70px;">
                         <strong>${firstTask.baseTitle || firstTask.title}</strong><br>
                         <small>📅 ${firstTask.date || 'Sin fecha'}</small><br>
                         <small>👥 ${assignedUsers}</small><br>
-                        ${firstTask.isRepeat ? '<small>🔄 Repetitiva (' + dayNamesShort.filter((d,i) => firstTask.repeatDays.includes(i)).join(', ') + ')</small>' : ''}
+                        ${firstTask.isRepeat ? '<small>🔄 Repetitiva (' + daysText + ')</small>' : ''}
+                        <button class="edit-task-btn" onclick="openEditTaskModal('${groupId}')">✏️</button>
                     </div>
                 `;
             });
@@ -511,6 +551,19 @@
                 document.getElementById('edit-task-repeat').checked ? 'block' : 'none';
         }
 
+        function addCategory() {
+            const input = document.getElementById('new-category');
+            const newCat = input.value.trim();
+            
+            if(!newCat) return alert('Escribe el nombre de la categoría');
+            if(db.categories.includes(newCat)) return alert('Esta categoría ya existe');
+            
+            db.categories.push(newCat);
+            save();
+            input.value = '';
+            renderSettings();
+        }
+
         function login(id) {
             currentUser = db.users.find(u => u.id === id);
             document.getElementById('screen-home').classList.remove('active');
@@ -530,6 +583,14 @@
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             
             document.getElementById(viewId).classList.add('active');
+            
+            // Actualizar título del header
+            const titles = {
+                'view-tasks': 'Tareas de ' + currentUser.name,
+                'view-calendar': 'Calendario de ' + currentUser.name,
+                'view-scores': 'Puntuación de ' + currentUser.name
+            };
+            document.getElementById('user-title').innerText = titles[viewId] || currentUser.name;
             
             const btnIndex = ['view-tasks', 'view-calendar', 'view-scores'].indexOf(viewId);
             if(btnIndex >= 0) {
@@ -802,6 +863,16 @@
         }
 
         function generateNextRepeatingTask(completedTask) {
+            // Contar cuántas tareas futuras hay del mismo grupo
+            const futureTasks = currentUser.tasks.filter(t => 
+                t.groupId === completedTask.groupId && 
+                (t.status === 'En espera' || t.status === 'En proceso') &&
+                t.id !== completedTask.id
+            );
+            
+            // Solo generar si hay menos de 3 tareas futuras
+            if(futureTasks.length >= 3) return;
+            
             const taskDate = new Date(completedTask.date + 'T00:00:00');
             let nextDate = new Date(taskDate);
             nextDate.setDate(nextDate.getDate() + 1);
@@ -809,17 +880,15 @@
             let found = false;
             let attempts = 0;
             
-            // Buscar siguiente ocurrencia (máximo 14 días adelante)
-            while(!found && attempts < 14) {
+            // Buscar siguiente ocurrencia (máximo 30 días adelante)
+            while(!found && attempts < 30) {
                 if(completedTask.repeatDays.includes(nextDate.getDay())) {
                     const nextDateStr = nextDate.toISOString().split('T')[0];
                     
                     // Verificar que no exista ya
                     const exists = currentUser.tasks.some(t => 
                         t.groupId === completedTask.groupId && 
-                        t.date === nextDateStr &&
-                        t.status !== 'Terminada' &&
-                        t.status !== 'Perdida'
+                        t.date === nextDateStr
                     );
                     
                     if(!exists) {
