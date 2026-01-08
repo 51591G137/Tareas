@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Gestor Personal</title>
+    <style>
+        /* ESTILOS (CSS) - Diseño sencillo y limpio */
+        :root { --primary: #007bff; --bg: #f4f4f9; --card: #fff; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; padding-bottom: 80px; }
+        h1, h2, h3 { margin: 0; }
+        
+        /* Navegación inferior */
+        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #ccc; height: 60px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+        .nav-btn { flex: 1; border: none; background: none; font-size: 12px; font-weight: bold; color: #666; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .nav-btn.active { color: var(--primary); }
+        
+        /* Pantallas */
+        .screen { display: none; padding: 20px; }
+        .screen.active { display: block; }
+
+        /* Componentes */
+        .card { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        button { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        button.secondary { background: #6c757d; }
+        button.danger { background: #dc3545; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        
+        /* Usuarios */
+        .user-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; margin-bottom: 10px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; }
+        
+        /* Tareas */
+        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; color: white; margin-bottom: 5px; }
+        .st-espera { background: #ffc107; color: #333; }
+        .st-proceso { background: #17a2b8; }
+        .st-completada { background: #28a745; }
+        .st-terminada { background: #343a40; } /* Diferencia visual solicitada */
+
+        .score-row { display: flex; justify-content: space-between; margin-top: 5px; font-size: 14px; border-bottom: 1px solid #eee; padding: 5px 0; }
+        .calendar-date { font-weight: bold; color: var(--primary); margin-top: 20px; border-bottom: 2px solid var(--primary); display: inline-block; }
+    </style>
+</head>
+<body>
+
+    <div id="screen-users" class="screen active">
+        <h2>Hola, ¿quién eres?</h2>
+        <p>Selecciona tu perfil o crea uno nuevo.</p>
+        <div id="users-list"></div>
+        <div class="card">
+            <h3>Nuevo Usuario</h3>
+            <input type="text" id="new-user-name" placeholder="Nombre...">
+            <button onclick="createUser()">Crear Perfil</button>
+        </div>
+    </div>
+
+    <div id="main-app" style="display:none;">
+        <div style="padding: 15px; background: #fff; border-bottom: 1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
+            <h2 id="current-user-display">Usuario</h2>
+            <button class="secondary" onclick="logout()" style="padding: 5px 10px; font-size: 12px;">Salir</button>
+        </div>
+
+        <div id="view-tasks" class="screen">
+            <h3>Mis Tareas</h3>
+            <button onclick="showAddTaskForm()" style="width:100%; margin-bottom:15px;">+ Nueva Tarea</button>
+            
+            <div id="add-task-form" class="card" style="display:none;">
+                <h4>Nueva Tarea</h4>
+                <input type="text" id="t-title" placeholder="Título de la tarea">
+                <label>Fecha (Opcional - Para calendario)</label>
+                <input type="date" id="t-date">
+                <label>Estado</label>
+                <select id="t-status">
+                    <option value="En espera">En espera</option>
+                    <option value="En proceso">En proceso</option>
+                    <option value="Completada">Completada</option>
+                    <option value="Terminada">Terminada</option>
+                </select>
+                
+                <h4>Puntuaciones</h4>
+                <div id="score-inputs"></div> <input type="text" id="new-cat-input" placeholder="Nueva categoría (ej. Puntualidad)" style="margin-top:10px;">
+                <button class="secondary" onclick="addCategory()" style="width:auto; font-size:12px;">+ Añadir Categoría</button>
+                
+                <div style="margin-top:15px; display:flex; gap:10px;">
+                    <button onclick="saveTask()">Guardar Tarea</button>
+                    <button class="secondary" onclick="hideAddTaskForm()">Cancelar</button>
+                </div>
+            </div>
+
+            <div id="tasks-list">
+                </div>
+        </div>
+
+        <div id="view-calendar" class="screen">
+            <h3>Calendario</h3>
+            <p>Tareas organizadas por fecha.</p>
+            <div id="calendar-list"></div>
+        </div>
+
+        <div id="view-scores" class="screen">
+            <h3>Mi Puntuación Total</h3>
+            <div class="card">
+                <div id="total-scores-list"></div>
+            </div>
+        </div>
+
+        <nav class="nav-bottom">
+            <button class="nav-btn active" onclick="navTo('view-tasks', this)">Tareas</button>
+            <button class="nav-btn" onclick="navTo('view-calendar', this)">Calendario</button>
+            <button class="nav-btn" onclick="navTo('view-scores', this)">Puntuación</button>
+        </nav>
+    </div>
+
+    <script>
+        // --- LÓGICA (JAVASCRIPT) ---
+
+        // Variables Globales
+        let db = { users: [], categories: ['Responsabilidad', 'Amabilidad', 'Respeto'] };
+        let currentUser = null;
+
+        // Cargar datos al iniciar
+        function loadData() {
+            const data = localStorage.getItem('appOfflineDB');
+            if(data) db = JSON.parse(data);
+            renderUsers();
+        }
+
+        // Guardar datos
+        function saveData() {
+            localStorage.setItem('appOfflineDB', JSON.stringify(db));
+        }
+
+        // --- GESTIÓN DE USUARIOS ---
+        function renderUsers() {
+            const list = document.getElementById('users-list');
+            list.innerHTML = '';
+            db.users.forEach(user => {
+                const div = document.createElement('div');
+                div.className = 'user-item';
+                div.innerHTML = `<strong>${user.name}</strong> <span>></span>`;
+                div.onclick = () => login(user.id);
+                list.appendChild(div);
+            });
+        }
+
+        function createUser() {
+            const nameInput = document.getElementById('new-user-name');
+            const name = nameInput.value.trim();
+            if(!name) return alert("Escribe un nombre");
+            
+            const newUser = {
+                id: Date.now(),
+                name: name,
+                tasks: [] // Cada usuario tiene sus tareas aisladas
+            };
+            db.users.push(newUser);
+            saveData();
+            nameInput.value = '';
+            renderUsers();
+        }
+
+        function login(userId) {
+            currentUser = db.users.find(u => u.id === userId);
+            document.getElementById('screen-users').classList.remove('active');
+            document.getElementById('main-app').style.display = 'block';
+            document.getElementById('current-user-display').innerText = currentUser.name;
+            
+            // Navegar a tareas por defecto y renderizar
+            navTo('view-tasks', document.querySelectorAll('.nav-btn')[0]);
+            renderCategoriesInput();
+            renderTasks();
+            renderScores();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('screen-users').classList.add('active');
+        }
+
+        // --- NAVEGACIÓN ---
+        function navTo(screenId, btnElement) {
+            // Ocultar todas las pantallas del main
+            document.querySelectorAll('#main-app .screen').forEach(el => el.classList.remove('active'));
+            // Mostrar la elegida
+            document.getElementById(screenId).classList.add('active');
+            
+            // Actualizar botones menú
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+
+            if(screenId === 'view-tasks') renderTasks();
+            if(screenId === 'view-calendar') renderCalendar();
+            if(screenId === 'view-scores') renderScores();
+        }
+
+        // --- TAREAS Y PUNTUACIÓN ---
+        
+        function renderCategoriesInput() {
+            const container = document.getElementById('score-inputs');
+            container.innerHTML = '';
+            db.categories.forEach(cat => {
+                container.innerHTML += `
+                    <label>${cat} (Puntos: 0-10)</label>
+                    <input type="number" class="score-input" data-cat="${cat}" value="0" min="0" max="10">
+                `;
+            });
+        }
+
+        function addCategory() {
+            const input = document.getElementById('new-cat-input');
+            const val = input.value.trim();
+            if(val && !db.categories.includes(val)) {
+                db.categories.push(val);
+                saveData();
+                renderCategoriesInput();
+                input.value = '';
+            }
+        }
+
+        function showAddTaskForm() {
+            document.getElementById('add-task-form').style.display = 'block';
+            renderCategoriesInput();
+        }
+        function hideAddTaskForm() {
+            document.getElementById('add-task-form').style.display = 'none';
+        }
+
+        function saveTask() {
+            const title = document.getElementById('t-title').value;
+            const date = document.getElementById('t-date').value;
+            const status = document.getElementById('t-status').value;
+            
+            if(!title) return alert("Pon un título a la tarea");
+
+            // Recoger puntuaciones
+            let taskScores = {};
+            document.querySelectorAll('.score-input').forEach(input => {
+                taskScores[input.dataset.cat] = parseInt(input.value) || 0;
+            });
+
+            const newTask = {
+                id: Date.now(),
+                title,
+                date,
+                status,
+                scores: taskScores
+            };
+
+            currentUser.tasks.push(newTask);
+            
+            // Actualizar el usuario dentro de la DB general
+            const userIndex = db.users.findIndex(u => u.id === currentUser.id);
+            db.users[userIndex] = currentUser;
+            saveData();
+
+            hideAddTaskForm();
+            renderTasks();
+            
+            // Limpiar form
+            document.getElementById('t-title').value = '';
+            document.getElementById('t-date').value = '';
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('tasks-list');
+            list.innerHTML = '';
+            
+            // Ordenar: primero las más nuevas
+            const tasks = [...currentUser.tasks].reverse();
+
+            tasks.forEach(t => {
+                let statusColor = 'st-espera';
+                if(t.status === 'En proceso') statusColor = 'st-proceso';
+                if(t.status === 'Completada') statusColor = 'st-completada';
+                if(t.status === 'Terminada') statusColor = 'st-terminada';
+
+                // Formatear puntuaciones para mostrar
+                let scoresHtml = '';
+                for (const [cat, val] of Object.entries(t.scores)) {
+                    if(val > 0) scoresHtml += `<div class="score-row"><span>${cat}</span> <b>+${val}</b></div>`;
+                }
+
+                list.innerHTML += `
+                    <div class="card">
+                        <span class="status-badge ${statusColor}">${t.status}</span>
+                        <h4>${t.title}</h4>
+                        <small>${t.date ? '📅 ' + t.date : 'Sin fecha'}</small>
+                        <div style="margin-top:10px; border-top:1px dashed #eee; padding-top:5px;">
+                            ${scoresHtml}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderCalendar() {
+            const list = document.getElementById('calendar-list');
+            list.innerHTML = '';
+            
+            // Filtrar tareas que tienen fecha
+            const datedTasks = currentUser.tasks.filter(t => t.date);
+            // Ordenar por fecha
+            datedTasks.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            let lastDate = '';
+            
+            datedTasks.forEach(t => {
+                if(t.date !== lastDate) {
+                    list.innerHTML += `<div class="calendar-date">${t.date}</div>`;
+                    lastDate = t.date;
+                }
+                list.innerHTML += `
+                    <div class="card" style="margin-top:5px; border-left: 4px solid var(--primary);">
+                        <div>${t.title}</div>
+                        <small>${t.status}</small>
+                    </div>
+                `;
+            });
+
+            if(datedTasks.length === 0) list.innerHTML = '<p style="text-align:center; color:#999;">No hay tareas con fecha asignada.</p>';
+        }
+
+        function renderScores() {
+            const list = document.getElementById('total-scores-list');
+            list.innerHTML = '';
+            
+            let totals = {};
+            // Inicializar contadores con todas las categorías existentes
+            db.categories.forEach(c => totals[c] = 0);
+
+            // Sumar todo
+            currentUser.tasks.forEach(t => {
+                for (const [cat, val] of Object.entries(t.scores)) {
+                    if(!totals[cat]) totals[cat] = 0;
+                    totals[cat] += val;
+                }
+            });
+
+            for (const [cat, val] of Object.entries(totals)) {
+                list.innerHTML += `
+                    <div class="score-row" style="font-size:16px; padding:10px 0;">
+                        <span>${cat}</span> <b style="color:var(--primary);">${val} pts</b>
+                    </div>
+                `;
+            }
+        }
+
+        // Inicializar
+        loadData();
+
+    </script>
+</body>
+</html>
