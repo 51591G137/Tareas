@@ -318,15 +318,15 @@
         <div class="card">
             <h4>Copia de Seguridad</h4>
             <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
-                Guarda todos tus datos (usuarios, tareas, puntuaciones) en un archivo. Podrás restaurarlos en cualquier momento.
+                Guarda todos tus datos (usuarios, tareas, puntuaciones). Se abrirá el menú de compartir de Android para que elijas dónde guardarlo: Drive, Email, WhatsApp, etc.
             </p>
-            <button onclick="exportBackup()" style="background: var(--success);">📥 Descargar Backup</button>
-            <button class="secondary" onclick="document.getElementById('import-file').click();" style="margin-top: 10px;">📤 Restaurar Backup</button>
-            <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importBackup(event)">
+            <button onclick="exportBackup()" style="background: var(--success);">📤 Compartir Backup</button>
+            <button class="secondary" onclick="document.getElementById('import-file').click();" style="margin-top: 10px;">📥 Restaurar Backup</button>
+            <input type="file" id="import-file" accept=".json,.txt" style="display:none;" onchange="importBackup(event)">
             
             <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
                 <small style="color: #856404;">
-                    <strong>⚠️ Importante:</strong> Al restaurar un backup, se reemplazarán todos los datos actuales.
+                    <strong>⚠️ Importante:</strong> Al restaurar un backup, se reemplazarán todos los datos actuales. Guarda el archivo de backup en un lugar seguro (Drive, Email, etc.).
                 </small>
             </div>
         </div>
@@ -637,20 +637,74 @@
 
         function exportBackup() {
             const dataStr = JSON.stringify(db, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
             
             const now = new Date();
             const timestamp = now.toISOString().split('T')[0] + '_' + 
                               now.getHours().toString().padStart(2, '0') + 
-                              now.getMinutes().toString().padStart(2, '0');
+                              now.getMinutes().toString().padStart(2, '0') +
+                              now.getSeconds().toString().padStart(2, '0');
             const fileName = `gestor_elite_backup_${timestamp}.json`;
             
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = fileName;
-            link.click();
+            // Intentar usar Web Share API (mejor para móviles)
+            if (navigator.share && navigator.canShare) {
+                // Crear archivo para compartir
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const file = new File([blob], fileName, { type: 'application/json' });
+                
+                if (navigator.canShare({ files: [file] })) {
+                    navigator.share({
+                        title: 'Backup Gestor Elite',
+                        text: 'Copia de seguridad de Gestor Elite',
+                        files: [file]
+                    })
+                    .then(() => {
+                        console.log('Backup compartido exitosamente');
+                    })
+                    .catch((error) => {
+                        console.log('Error al compartir:', error);
+                        // Si falla, usar método alternativo
+                        fallbackExport(dataStr, fileName);
+                    });
+                } else {
+                    // Si no puede compartir archivos, usar método alternativo
+                    fallbackExport(dataStr, fileName);
+                }
+            } else {
+                // Navegador no soporta Web Share API
+                fallbackExport(dataStr, fileName);
+            }
+        }
+
+        function fallbackExport(dataStr, fileName) {
+            // Método alternativo: mostrar el contenido para copiar
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
             
-            alert('✅ Backup creado correctamente:\n' + fileName);
+            modal.innerHTML = `
+                <div style="background:white;padding:20px;border-radius:12px;max-width:500px;width:100%;max-height:80vh;overflow:auto;">
+                    <h3 style="margin-top:0;">Backup Generado</h3>
+                    <p style="font-size:14px;color:#666;">El sistema de compartir no está disponible. Copia este texto y guárdalo en un archivo:</p>
+                    <textarea id="backup-text" readonly style="width:100%;height:300px;font-family:monospace;font-size:11px;padding:10px;border:1px solid #ddd;border-radius:5px;margin:10px 0;">${dataStr}</textarea>
+                    <button onclick="copyBackupText()" style="width:100%;background:#4a90e2;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;margin-bottom:10px;">📋 Copiar al Portapapeles</button>
+                    <button onclick="this.parentElement.parentElement.remove()" style="width:100%;background:#95a5a6;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;">Cerrar</button>
+                    <p style="font-size:12px;color:#666;margin-top:10px;">💡 Pega el contenido en un editor de texto y guárdalo como: <strong>${fileName}</strong></p>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function copyBackupText() {
+            const textarea = document.getElementById('backup-text');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // Para móviles
+            
+            try {
+                document.execCommand('copy');
+                alert('✅ Backup copiado al portapapeles!\n\nAhora puedes pegarlo en tu app de notas, email, Drive, etc.');
+            } catch (err) {
+                alert('❌ No se pudo copiar automáticamente.\nPor favor, selecciona el texto manualmente y cópialo.');
+            }
         }
 
         function importBackup(event) {
