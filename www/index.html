@@ -325,7 +325,15 @@
     <div id="screen-settings" class="screen">
         <button class="secondary small" onclick="navTo('screen-home')" style="margin-bottom: 15px;">⬅ Volver</button>
         <h3>Configuración</h3>
-        
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+            <button class="secondary small" onclick="showSettingsSection('users')" id="settings-tab-users">Usuarios</button>
+            <button class="secondary small" onclick="showSettingsSection('tasks')" id="settings-tab-tasks">Tareas</button>
+            <button class="secondary small" onclick="showSettingsSection('badges')" id="settings-tab-badges">Insignias</button>
+            <button class="secondary small" onclick="showSettingsSection('backup')" id="settings-tab-backup">Backup</button>
+        </div>
+
+        <!-- Sección: Usuarios -->
+        <div id="settings-users-section">
         <!-- Gestionar Usuarios -->
         <div class="card">
             <h4>Gestionar Usuarios</h4>
@@ -344,6 +352,18 @@
             <div id="user-scores-editor" style="display:none; margin-top:10px;"></div>
         </div>
 
+        <!-- Gestión de Categorías (Usuarios) -->
+        <div class="card">
+            <h4>Gestión de Categorías</h4>
+            <p style="font-size:12px;color:#666;">Añade, edita o borra categorías. Al editar se actualizarán las tareas (pasadas y presentes).</p>
+            <div id="categories-list-users"></div>
+            <input type="text" id="new-category" placeholder="Nueva categoría (ej: Puntualidad)">
+            <button class="secondary" onclick="addCategory()">+ Añadir Categoría</button>
+        </div>
+        </div>
+
+        <!-- Sección: Insignias -->
+        <div id="settings-badges-section" style="display:none;">
         <!-- Gestionar Insignias -->
         <div class="card">
             <h4>Gestionar Insignias</h4>
@@ -354,19 +374,17 @@
             
             <label style="font-size: 12px;">Emoji/Icono:</label>
             <input type="text" id="badge-emoji" placeholder="Ej: 🏆 ⭐ 🎖️ 👑" maxlength="2">
-            
-            <label style="font-size: 12px;">Categoría:</label>
-            <select id="badge-category"></select>
-            
-            <label style="font-size: 12px;">Puntos necesarios:</label>
-            <input type="number" id="badge-points" placeholder="Ej: 100" min="1">
+            <div id="badge-requirements" style="margin-top:8px;"></div>
             
             <button onclick="addBadge()" style="background: var(--success);">+ Añadir Insignia</button>
             
             <h4 style="margin-top: 20px;">Insignias Creadas</h4>
             <div id="badges-list"></div>
         </div>
+        </div>
 
+        <!-- Sección: Tareas -->
+        <div id="settings-tasks-section" style="display:none;">
         <!-- Crear Tarea Global -->
         <div class="card">
             <h4>Crear Tarea Global</h4>
@@ -401,9 +419,10 @@
             <div id="gt-scores"></div>
             
             <h4 style="margin-top: 15px;">Categorías</h4>
-            <input type="text" id="new-category" placeholder="Nueva categoría (ej: Puntualidad)">
-            <button class="secondary" onclick="addCategory()">+ Añadir Categoría</button>
-            
+            <div style="margin-bottom:8px;">
+                <input type="text" id="new-category-dup" placeholder="Nueva categoría (ej: Puntualidad)">
+                <button class="secondary" onclick="addCategoryFromTasks()">+ Añadir Categoría</button>
+            </div>
             <button onclick="saveGlobalTask()" style="margin-top:10px;">Crear Tareas</button>
         </div>
 
@@ -412,7 +431,10 @@
             <h4>Tareas Globales Creadas</h4>
             <div id="global-tasks-list"></div>
         </div>
+        </div>
 
+        <!-- Sección: Backup -->
+        <div id="settings-backup-section" style="display:none;">
         <!-- Backup y Restauración -->
         <div class="card">
             <h4>Copia de Seguridad</h4>
@@ -420,6 +442,7 @@
                 Guarda todos tus datos (usuarios, tareas, puntuaciones, insignias).
             </p>
             <button onclick="exportBackup()" style="background: var(--success);">📤 Crear Backup</button>
+            <small style="display:block;margin-top:8px;color:#666;font-size:12px;">Al crear backup podrás descargar, copiar o compartir el archivo JSON.</small>
             
             <h4 style="margin-top: 20px;">Restaurar Backup</h4>
             <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
@@ -434,6 +457,8 @@
                     <strong>⚠️ Importante:</strong> Al restaurar un backup, se reemplazarán todos los datos actuales.
                 </small>
             </div>
+        </div>
+        </div>
         </div>
     </div>
 
@@ -514,6 +539,9 @@
                     <label class="day-check">D<input type="checkbox" class="edit-day-opt" value="0"></label>
                 </div>
             </div>
+
+            <p style="margin: 10px 0 5px 0;"><strong>Asignar a:</strong></p>
+            <div id="edit-assign-users" class="user-checkbox-list"></div>
 
             <h4>Puntuaciones</h4>
             <div id="edit-task-scores"></div>
@@ -606,6 +634,17 @@
                     }
                 });
             }
+
+            // Convertir formato antiguo de insignias (category + points) a requirements por categoría
+            if(oldData.badges && Array.isArray(oldData.badges)) {
+                oldData.badges = oldData.badges.map(b => {
+                    if(b.requirements) return b;
+                    if(b.category && b.points) {
+                        return { id: b.id || Date.now(), name: b.name, emoji: b.emoji, requirements: { [b.category]: b.points } };
+                    }
+                    return b;
+                });
+            }
             
             oldData.version = DB_VERSION;
             save();
@@ -674,17 +713,40 @@
             });
 
             // Selector de categoría para insignias
-            const badgeCatSelect = document.getElementById('badge-category');
-            badgeCatSelect.innerHTML = '';
+            // Preparar inputs de requisitos para insignias (por categoría)
+            const badgeReqDiv = document.getElementById('badge-requirements');
+            badgeReqDiv.innerHTML = '<p style="font-size:12px;color:#666;margin:0 0 6px 0;">Requisitos por categoría:</p>';
             db.categories.forEach(cat => {
-                badgeCatSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+                badgeReqDiv.innerHTML += `<label style="display:block;margin-bottom:6px;">${cat} <input type="number" class="badge-req-in" data-cat="${cat}" value="0" min="0"></label>`;
             });
+
+            // Lista de categorías (usuarios)
+            const catListUsers = document.getElementById('categories-list-users');
+            if(catListUsers) {
+                catListUsers.innerHTML = '';
+                db.categories.forEach((cat, idx) => {
+                    catListUsers.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;"><span>${cat}</span><span><button class=\"small\" onclick=\"promptEditCategory(${idx})\">Editar</button> <button class=\"danger small\" onclick=\"deleteCategory('${cat}')\">Borrar</button></span></div>`;
+                });
+            }
 
             // Tareas globales
             renderGlobalTasks();
             
             // Insignias
             renderBadgesList();
+
+            // Mostrar por defecto sección Usuarios
+            showSettingsSection('users');
+        }
+
+        function showSettingsSection(name) {
+            const sections = ['users','tasks','badges','backup'];
+            sections.forEach(s => {
+                const el = document.getElementById('settings-' + s + '-section');
+                if(el) el.style.display = (s === name) ? 'block' : 'none';
+                const tab = document.getElementById('settings-tab-' + s);
+                if(tab) tab.classList.toggle('active', s === name);
+            });
         }
 
         function loadUserScores() {
@@ -752,27 +814,24 @@
         function addBadge() {
             const name = document.getElementById('badge-name').value.trim();
             const emoji = document.getElementById('badge-emoji').value.trim();
-            const category = document.getElementById('badge-category').value;
-            const points = parseInt(document.getElementById('badge-points').value);
-            
-            if(!name || !emoji || !category || !points) {
-                return alert('Completa todos los campos de la insignia');
-            }
-            
-            db.badges.push({
-                id: Date.now(),
-                name: name,
-                emoji: emoji,
-                category: category,
-                points: points
+            if(!name || !emoji) return alert('Completa nombre y emoji');
+
+            const reqs = {};
+            document.querySelectorAll('.badge-req-in').forEach(i => {
+                const val = parseInt(i.value) || 0;
+                if(val > 0) reqs[i.dataset.cat] = val;
             });
+
+            if(Object.keys(reqs).length === 0) return alert('Define al menos un requisito por categoría');
+
+            db.badges.push({ id: Date.now(), name: name, emoji: emoji, requirements: reqs });
             
             save();
             
             // Limpiar formulario
             document.getElementById('badge-name').value = '';
             document.getElementById('badge-emoji').value = '';
-            document.getElementById('badge-points').value = '';
+            document.querySelectorAll('.badge-req-in').forEach(i => i.value = 0);
             
             renderBadgesList();
         }
@@ -787,12 +846,13 @@
             }
             
             db.badges.forEach(badge => {
+                const reqHtml = Object.keys(badge.requirements || {}).map(cat => `${cat}: ${badge.requirements[cat]} pts`).join('<br>');
                 container.innerHTML += `
                     <div class="badge-config-item">
                         <div class="badge-emoji-display">${badge.emoji}</div>
                         <div style="flex: 1;">
                             <strong>${badge.name}</strong><br>
-                            <small>${badge.category}: ${badge.points} pts</small>
+                            <small>${reqHtml}</small>
                         </div>
                         <button class="danger small" onclick="deleteBadge(${badge.id})">Eliminar</button>
                     </div>
@@ -902,22 +962,133 @@
         }
 
         function addCategory() {
+            // Preservar estado del formulario de crear tarea global
+            const formState = {
+                title: document.getElementById('gt-title') ? document.getElementById('gt-title').value : '',
+                date: document.getElementById('gt-date') ? document.getElementById('gt-date').value : '',
+                repeat: document.getElementById('gt-repeat') ? document.getElementById('gt-repeat').checked : false,
+                assigned: Array.from(document.querySelectorAll('.assign-user:checked')).map(i => i.value),
+                days: Array.from(document.querySelectorAll('.day-opt:checked')).map(i => i.value),
+                scores: Array.from(document.querySelectorAll('.sc-in')).reduce((acc,i) => { acc[i.dataset.cat]=i.value; return acc; }, {})
+            };
+
             const input = document.getElementById('new-category');
             const newCat = input.value.trim();
-            
             if(!newCat) return alert('Escribe el nombre de la categoría');
             if(db.categories.includes(newCat)) return alert('Esta categoría ya existe');
-            
+
             db.categories.push(newCat);
-            
+
             // Añadir la categoría a todos los usuarios existentes
             db.users.forEach(user => {
                 if(!user.customScores) user.customScores = {};
                 user.customScores[newCat] = 0;
             });
-            
+
             save();
             input.value = '';
+            renderSettings();
+
+            // Restaurar estado del formulario de crear tarea global
+            setTimeout(() => {
+                try {
+                    if(document.getElementById('gt-title')) document.getElementById('gt-title').value = formState.title;
+                    if(document.getElementById('gt-date')) document.getElementById('gt-date').value = formState.date;
+                    if(document.getElementById('gt-repeat')) document.getElementById('gt-repeat').checked = formState.repeat;
+                    toggleRepeat();
+
+                    // Restaurar asignaciones
+                    document.querySelectorAll('.assign-user').forEach(cb => cb.checked = formState.assigned.includes(cb.value));
+
+                    // Restaurar días
+                    document.querySelectorAll('.day-opt').forEach(cb => cb.checked = formState.days.includes(cb.value));
+
+                    // Restaurar scores
+                    document.querySelectorAll('.sc-in').forEach(i => { if(formState.scores[i.dataset.cat]!==undefined) i.value = formState.scores[i.dataset.cat]; });
+                } catch(e) { /* noop */ }
+            }, 50);
+        }
+
+        function addCategoryFromTasks() {
+            const v = document.getElementById('new-category-dup').value.trim();
+            if(!v) return alert('Escribe el nombre de la categoría');
+            document.getElementById('new-category').value = v;
+            addCategory();
+            document.getElementById('new-category-dup').value = '';
+        }
+
+        function promptEditCategory(index) {
+            const oldName = db.categories[index];
+            const newName = prompt('Renombrar categoría', oldName);
+            if(!newName || newName.trim() === '' || newName === oldName) return;
+            editCategory(oldName, newName.trim());
+        }
+
+        function editCategory(oldName, newName) {
+            if(db.categories.includes(newName)) return alert('Ya existe una categoría con ese nombre');
+            const idx = db.categories.indexOf(oldName);
+            if(idx === -1) return;
+            db.categories[idx] = newName;
+
+            // Renombrar en customScores de usuarios
+            db.users.forEach(u => {
+                if(!u.customScores) u.customScores = {};
+                if(u.customScores.hasOwnProperty(oldName)) {
+                    u.customScores[newName] = u.customScores[oldName];
+                    delete u.customScores[oldName];
+                } else {
+                    u.customScores[newName] = 0;
+                }
+            });
+
+            // Renombrar en tareas (globalTasks y users tasks)
+            db.globalTasks.forEach(t => {
+                if(t.scores && t.scores.hasOwnProperty(oldName)) {
+                    t.scores[newName] = t.scores[oldName];
+                    delete t.scores[oldName];
+                } else if(t.scores) {
+                    t.scores[newName] = 0;
+                }
+            });
+            db.users.forEach(u => {
+                u.tasks.forEach(t => {
+                    if(t.scores && t.scores.hasOwnProperty(oldName)) {
+                        t.scores[newName] = t.scores[oldName];
+                        delete t.scores[oldName];
+                    } else if(t.scores) {
+                        t.scores[newName] = 0;
+                    }
+                });
+            });
+
+            // Actualizar requisitos de insignias
+            db.badges.forEach(b => {
+                if(b.requirements && b.requirements.hasOwnProperty(oldName)) {
+                    b.requirements[newName] = b.requirements[oldName];
+                    delete b.requirements[oldName];
+                }
+            });
+
+            save();
+            renderSettings();
+            renderHome();
+        }
+
+        function deleteCategory(cat) {
+            if(!confirm('¿Eliminar categoría "' + cat + '"? Se eliminarán las referencias en puntuaciones e insignias.')) return;
+            db.categories = db.categories.filter(c => c !== cat);
+
+            // Eliminar key en usuarios
+            db.users.forEach(u => { if(u.customScores) delete u.customScores[cat]; });
+
+            // Eliminar en tareas
+            db.globalTasks.forEach(t => { if(t.scores) delete t.scores[cat]; });
+            db.users.forEach(u => u.tasks.forEach(t => { if(t.scores) delete t.scores[cat]; }));
+
+            // Eliminar en insignias
+            db.badges.forEach(b => { if(b.requirements) delete b.requirements[cat]; });
+
+            save();
             renderSettings();
         }
 
@@ -1074,10 +1245,20 @@
                 document.getElementById('edit-repeat-options').style.display = 'none';
             }
             
+            // Asignación de usuarios (permitir modificar asignados)
+            const assignDiv = document.getElementById('edit-assign-users');
+            assignDiv.innerHTML = '';
+            const assignedUserIds = [...new Set(tasks.map(t => t.userId))];
+            if(db.users.length === 0) assignDiv.innerHTML = '<p style="color:#999; font-size:12px;">No hay usuarios</p>';
+            db.users.forEach(u => {
+                const checked = assignedUserIds.includes(u.id);
+                assignDiv.innerHTML += `<label><input type=\"checkbox\" class=\"edit-assign-user\" value=\"${u.id}\" ${checked ? 'checked' : ''}> ${u.name}</label>`;
+            });
+
             const scoresDiv = document.getElementById('edit-task-scores');
             scoresDiv.innerHTML = '';
             db.categories.forEach(cat => {
-                const val = firstTask.scores[cat] || 0;
+                const val = firstTask.scores && firstTask.scores[cat] ? firstTask.scores[cat] : 0;
                 scoresDiv.innerHTML += `<label>${cat} <input type="number" class="edit-sc-in" data-cat="${cat}" value="${val}" min="0"></label>`;
             });
             
@@ -1102,47 +1283,63 @@
             document.querySelectorAll('.edit-sc-in').forEach(i => {
                 scores[i.dataset.cat] = parseInt(i.value) || 0;
             });
-            
+            // Obtener usuarios asignados seleccionados ahora
+            const newAssigned = Array.from(document.querySelectorAll('.edit-assign-user:checked')).map(i => parseInt(i.value));
+
             const oldTasks = db.globalTasks.filter(t => t.groupId === currentEditTaskGroupId);
-            const affectedUserIds = [...new Set(oldTasks.map(t => t.userId))];
-            
+            const oldAssigned = [...new Set(oldTasks.map(t => t.userId))];
+
+            // Eliminar entradas antiguas del grupo
             db.globalTasks = db.globalTasks.filter(t => t.groupId !== currentEditTaskGroupId);
-            affectedUserIds.forEach(userId => {
+            oldAssigned.forEach(userId => {
                 const user = db.users.find(u => u.id === userId);
                 if(user) {
-                    user.tasks = user.tasks.filter(t => t.groupId !== currentEditTaskGroupId);
+                    // Cuando se editan asignaciones, borrar solo desde hoy en adelante
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    user.tasks = user.tasks.filter(t => {
+                        if(t.groupId !== currentEditTaskGroupId) return true;
+                        return t.date && t.date < todayStr; // conservar anteriores
+                    });
                 }
             });
-            
-            if(!isRepeat) {
-                affectedUserIds.forEach(userId => {
-                    const user = db.users.find(u => u.id === userId);
+
+            // Para cada usuario: crear tareas; si es usuario NUEVO asignado, crear desde hoy (fecha de edición)
+            const todayStr = new Date().toISOString().split('T')[0];
+            const createForUser = (userId, isNew) => {
+                const user = db.users.find(u => u.id === userId);
+                if(!user) return;
+                if(!isRepeat) {
                     const taskId = Date.now() + Math.random();
-                    
+                    // si es nuevo asignado, crear desde hoy; si no, usar la fecha editada si existe
+                    const startDate = isNew ? todayStr : (date || todayStr);
                     const task = {
                         id: taskId,
                         groupId: currentEditTaskGroupId,
                         title: title,
                         baseTitle: title,
-                        date: date,
+                        date: startDate,
                         status: 'En espera',
                         scores: scores,
                         isRepeat: false,
                         userId: userId
                     };
-                    
                     user.tasks.push(task);
                     db.globalTasks.push(task);
-                });
-            } else {
-                const selectedDays = Array.from(document.querySelectorAll('.edit-day-opt:checked')).map(el => parseInt(el.value));
-                if(selectedDays.length === 0) return alert("Selecciona al menos un día");
-                
-                affectedUserIds.forEach(userId => {
-                    const user = db.users.find(u => u.id === userId);
-                    createRepeatedTasks(user, title, date, selectedDays, scores, currentEditTaskGroupId, userId);
-                });
-            }
+                } else {
+                    const selectedDays = Array.from(document.querySelectorAll('.edit-day-opt:checked')).map(el => parseInt(el.value));
+                    if(selectedDays.length === 0) return alert("Selecciona al menos un día");
+
+                    // si es nuevo asignado, generar a partir de hoy; si no, a partir de la fecha editada
+                    const start = isNew ? todayStr : (date || todayStr);
+                    createRepeatedTasks(user, title, start, selectedDays, scores, currentEditTaskGroupId, userId);
+                }
+            };
+
+            // Crear tareas para asignados: distinguir nuevos de existentes
+            newAssigned.forEach(uid => {
+                const isNew = !oldAssigned.includes(uid);
+                createForUser(uid, isNew);
+            });
             
             save();
             alert("Tarea actualizada");
@@ -1173,6 +1370,12 @@
                         <h4 style="margin: 5px 0;">${t.title}</h4>
                         <small>📅 ${t.date || 'Sin fecha'}</small>
                         ${t.isRepeat ? '<br><small style="color: var(--primary);">🔄 Repetitiva</small>' : ''}
+                        <div style="margin-top:8px;font-size:12px;color:#444;">
+                            <strong>Puntos:</strong>
+                            <div style="margin-top:6px;">
+                                ${Object.keys(t.scores || {}).map(cat => `<div style=\"display:flex;justify-content:space-between;gap:8px;\"><span>${cat}</span><span style=\"font-weight:bold;color:var(--primary)\">${t.scores[cat] || 0} pts</span></div>`).join('')}
+                            </div>
+                        </div>
                     </div>
                 `;
             });
@@ -1365,14 +1568,22 @@
                 }
             }
 
-            // Mostrar insignias
+            // Mostrar insignias (soportando requisitos por categoría)
             container.innerHTML = '<div class="badge-grid"></div>';
             const grid = container.querySelector('.badge-grid');
 
             db.badges.forEach(badge => {
-                const userPoints = userScores[badge.category] || 0;
-                const unlocked = userPoints >= badge.points;
-                
+                // badge.requirements es un objeto { categoria: puntos, ... }
+                const reqs = badge.requirements || {};
+                let unlocked = true;
+                const parts = [];
+                Object.keys(reqs).forEach(cat => {
+                    const need = reqs[cat] || 0;
+                    const have = userScores[cat] || 0;
+                    parts.push(`${cat}: ${have}/${need} pts`);
+                    if(have < need) unlocked = false;
+                });
+
                 grid.innerHTML += `
                     <div class="badge-item">
                         <div class="badge-image ${unlocked ? 'unlocked' : 'locked'}">
@@ -1380,7 +1591,7 @@
                         </div>
                         <div class="badge-name">${badge.name}</div>
                         <div class="badge-progress">
-                            ${unlocked ? '🎉 Desbloqueada' : `${userPoints}/${badge.points} pts`}
+                            ${unlocked ? '🎉 Desbloqueada' : parts.join(' — ')}
                         </div>
                     </div>
                 `;
@@ -1422,19 +1633,54 @@
         function fallbackExport(dataStr, fileName) {
             const modal = document.createElement('div');
             modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
-            
             modal.innerHTML = `
-                <div style="background:white;padding:20px;border-radius:12px;max-width:95%;width:400px;max-height:80vh;overflow:auto;box-sizing:border-box;">
+                <div style="background:white;padding:20px;border-radius:12px;max-width:95%;width:420px;max-height:80vh;overflow:auto;box-sizing:border-box;">
                     <h3 style="margin-top:0;">Backup Generado</h3>
-                    <p style="font-size:14px;color:#666;">Copia este texto y guárdalo en un lugar seguro:</p>
-                    <textarea id="backup-text" readonly style="width:100%;height:300px;font-family:monospace;font-size:11px;padding:10px;border:1px solid #ddd;border-radius:5px;margin:10px 0;box-sizing:border-box;">${dataStr}</textarea>
-                    <button onclick="copyBackupText()" style="width:100%;background:#4a90e2;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;margin-bottom:10px;">📋 Copiar al Portapapeles</button>
+                    <p style="font-size:14px;color:#666;">Puedes descargar, compartir o copiar el contenido JSON:</p>
+                    <textarea id="backup-text" readonly style="width:100%;height:260px;font-family:monospace;font-size:11px;padding:10px;border:1px solid #ddd;border-radius:5px;margin:10px 0;box-sizing:border-box;">${dataStr}</textarea>
+                    <div style="display:flex;gap:8px;margin-bottom:10px;">
+                        <button onclick="downloadBackupFile('${fileName}', document.getElementById('backup-text').value)" style="flex:1;background:#4a90e2;color:white;border:none;padding:10px;border-radius:8px;font-weight:bold;">⬇️ Descargar</button>
+                        <button onclick="shareBackupFileFromData('${fileName}', document.getElementById('backup-text').value)" style="flex:1;background:#2ecc71;color:white;border:none;padding:10px;border-radius:8px;font-weight:bold;">🔗 Compartir</button>
+                    </div>
+                    <button onclick="copyBackupText()" style="width:100%;background:#6c7ae0;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;margin-bottom:10px;">📋 Copiar al Portapapeles</button>
                     <button onclick="this.parentElement.parentElement.remove()" style="width:100%;background:#95a5a6;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;">Cerrar</button>
                     <p style="font-size:12px;color:#666;margin-top:10px;">💡 Para restaurar: Ve a Configuración > Restaurar Backup > Pegar Backup</p>
                 </div>
             `;
-            
             document.body.appendChild(modal);
+        }
+
+        function downloadBackupFile(fileName, dataStr) {
+            try {
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert('No se pudo descargar el archivo');
+            }
+        }
+
+        function shareBackupFileFromData(fileName, dataStr) {
+            try {
+                if(navigator.share && navigator.canShare) {
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const file = new File([blob], fileName, { type: 'application/json' });
+                    if(navigator.canShare({ files: [file] })) {
+                        navigator.share({ title: 'Backup Gestor Elite', text: 'Copia de seguridad', files: [file] })
+                            .catch(() => alert('Compartir cancelado o no disponible'));
+                        return;
+                    }
+                }
+                alert('Compartir no disponible en este dispositivo');
+            } catch (e) {
+                alert('Error al intentar compartir');
+            }
         }
 
         function copyBackupText() {
