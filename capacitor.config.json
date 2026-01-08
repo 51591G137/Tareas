@@ -2,5 +2,9 @@
   "appId": "com.miempresa.app",
   "appName": "Gestor de Tareas y Puntos",
   "webDir": "www",
-  "bundledWebRuntime": false
+  "bundledWebRuntime": false,
+  "android": {
+    "versionCode": 2,
+    "versionName": "2.0"
+  }
 }

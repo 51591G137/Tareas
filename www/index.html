@@ -313,6 +313,23 @@
             <h4>Tareas Globales Creadas</h4>
             <div id="global-tasks-list"></div>
         </div>
+
+        <!-- Backup y Restauración -->
+        <div class="card">
+            <h4>Copia de Seguridad</h4>
+            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                Guarda todos tus datos (usuarios, tareas, puntuaciones) en un archivo. Podrás restaurarlos en cualquier momento.
+            </p>
+            <button onclick="exportBackup()" style="background: var(--success);">📥 Descargar Backup</button>
+            <button class="secondary" onclick="document.getElementById('import-file').click();" style="margin-top: 10px;">📤 Restaurar Backup</button>
+            <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importBackup(event)">
+            
+            <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+                <small style="color: #856404;">
+                    <strong>⚠️ Importante:</strong> Al restaurar un backup, se reemplazarán todos los datos actuales.
+                </small>
+            </div>
+        </div>
     </div>
 
     <!-- Aplicación principal -->
@@ -398,18 +415,72 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('eliteDB')) || { 
-            users: [], 
-            categories: ['Responsabilidad', 'Amabilidad', 'Respeto'],
-            globalTasks: [] // Tareas creadas desde configuración
-        };
+        const DB_VERSION = 2; // Incrementar cuando haya cambios en estructura
+        
+        let db = loadDatabase();
         let currentUser = null;
         let currentTaskId = null;
         let currentEditTaskGroupId = null;
         const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
         const dayNamesShort = ["D", "L", "M", "X", "J", "V", "S"];
 
+        function loadDatabase() {
+            const stored = localStorage.getItem('eliteDB');
+            let data;
+            
+            if(!stored) {
+                // Primera instalación
+                data = { 
+                    version: DB_VERSION,
+                    users: [], 
+                    categories: ['Responsabilidad', 'Amabilidad', 'Respeto'],
+                    globalTasks: []
+                };
+            } else {
+                data = JSON.parse(stored);
+                
+                // Migrar datos si es necesario
+                if(!data.version || data.version < DB_VERSION) {
+                    data = migrateDatabase(data);
+                }
+            }
+            
+            return data;
+        }
+
+        function migrateDatabase(oldData) {
+            // Si no tiene versión, es versión 1
+            const currentVersion = oldData.version || 1;
+            
+            // Asegurar que existe la estructura básica
+            if(!oldData.globalTasks) oldData.globalTasks = [];
+            if(!oldData.categories) oldData.categories = ['Responsabilidad', 'Amabilidad', 'Respeto'];
+            if(!oldData.users) oldData.users = [];
+            
+            // Migración de versión 1 a 2
+            if(currentVersion < 2) {
+                // Agregar groupId y baseTitle a tareas existentes si no lo tienen
+                oldData.users.forEach(user => {
+                    if(user.tasks) {
+                        user.tasks.forEach(task => {
+                            if(!task.groupId) {
+                                task.groupId = 'legacy_' + task.id;
+                            }
+                            if(!task.baseTitle && task.title) {
+                                task.baseTitle = task.title;
+                            }
+                        });
+                    }
+                });
+            }
+            
+            oldData.version = DB_VERSION;
+            save();
+            return oldData;
+        }
+
         function save() { 
+            db.version = DB_VERSION;
             localStorage.setItem('eliteDB', JSON.stringify(db)); 
         }
 
@@ -562,6 +633,67 @@
             save();
             input.value = '';
             renderSettings();
+        }
+
+        function exportBackup() {
+            const dataStr = JSON.stringify(db, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const now = new Date();
+            const timestamp = now.toISOString().split('T')[0] + '_' + 
+                              now.getHours().toString().padStart(2, '0') + 
+                              now.getMinutes().toString().padStart(2, '0');
+            const fileName = `gestor_elite_backup_${timestamp}.json`;
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = fileName;
+            link.click();
+            
+            alert('✅ Backup creado correctamente:\n' + fileName);
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            
+            if(!confirm('⚠️ ¿Estás seguro?\n\nSe reemplazarán TODOS los datos actuales con los del backup.\n\nEsta acción no se puede deshacer.')) {
+                event.target.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Validar estructura básica
+                    if(!importedData.users || !Array.isArray(importedData.users)) {
+                        throw new Error('Formato de backup inválido');
+                    }
+                    
+                    // Asegurar campos necesarios
+                    if(!importedData.categories) importedData.categories = ['Responsabilidad', 'Amabilidad', 'Respeto'];
+                    if(!importedData.globalTasks) importedData.globalTasks = [];
+                    if(!importedData.version) importedData.version = DB_VERSION;
+                    
+                    // Migrar si es necesario
+                    db = migrateDatabase(importedData);
+                    save();
+                    
+                    alert('✅ Backup restaurado correctamente!\n\nSe han importado:\n- ' + db.users.length + ' usuarios\n- ' + db.categories.length + ' categorías');
+                    
+                    renderSettings();
+                    renderHome();
+                    
+                } catch(error) {
+                    alert('❌ Error al importar backup:\n' + error.message + '\n\nAsegúrate de seleccionar un archivo de backup válido.');
+                }
+                
+                event.target.value = '';
+            };
+            
+            reader.readAsText(file);
         }
 
         function login(id) {
