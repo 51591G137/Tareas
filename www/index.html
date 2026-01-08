@@ -321,7 +321,13 @@
                 Guarda todos tus datos (usuarios, tareas, puntuaciones). Se abrirá el menú de compartir de Android para que elijas dónde guardarlo: Drive, Email, WhatsApp, etc.
             </p>
             <button onclick="exportBackup()" style="background: var(--success);">📤 Compartir Backup</button>
-            <button class="secondary" onclick="document.getElementById('import-file').click();" style="margin-top: 10px;">📥 Restaurar Backup</button>
+            
+            <h4 style="margin-top: 20px;">Restaurar Backup</h4>
+            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                Elige cómo quieres restaurar tus datos:
+            </p>
+            <button class="secondary" onclick="showPasteBackup()">📋 Pegar Backup</button>
+            <button class="secondary" onclick="document.getElementById('import-file').click();" style="margin-top: 10px;">📁 Subir Archivo</button>
             <input type="file" id="import-file" accept=".json,.txt" style="display:none;" onchange="importBackup(event)">
             
             <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
@@ -410,6 +416,19 @@
             <div class="modal-buttons">
                 <button onclick="saveEditedTask()">Guardar</button>
                 <button class="secondary" onclick="closeEditModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para pegar backup -->
+    <div id="paste-backup-modal" class="modal">
+        <div class="modal-content" style="max-width: 95%; width: 400px;">
+            <h3>Pegar Backup</h3>
+            <p style="font-size: 12px; color: #666;">Pega aquí el contenido del backup que copiaste:</p>
+            <textarea id="paste-backup-text" placeholder="Pega aquí el backup..." style="width:100%;height:250px;font-family:monospace;font-size:11px;padding:10px;border:1px solid #ddd;border-radius:5px;margin:10px 0;box-sizing:border-box;"></textarea>
+            <div class="modal-buttons">
+                <button onclick="processPastedBackup()" style="background: var(--success);">✅ Restaurar</button>
+                <button class="secondary" onclick="closePasteBackupModal()">Cancelar</button>
             </div>
         </div>
     </div>
@@ -678,16 +697,16 @@
         function fallbackExport(dataStr, fileName) {
             // Método alternativo: mostrar el contenido para copiar
             const modal = document.createElement('div');
-            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
             
             modal.innerHTML = `
-                <div style="background:white;padding:20px;border-radius:12px;max-width:500px;width:100%;max-height:80vh;overflow:auto;">
+                <div style="background:white;padding:20px;border-radius:12px;max-width:95%;width:400px;max-height:80vh;overflow:auto;box-sizing:border-box;">
                     <h3 style="margin-top:0;">Backup Generado</h3>
-                    <p style="font-size:14px;color:#666;">El sistema de compartir no está disponible. Copia este texto y guárdalo en un archivo:</p>
-                    <textarea id="backup-text" readonly style="width:100%;height:300px;font-family:monospace;font-size:11px;padding:10px;border:1px solid #ddd;border-radius:5px;margin:10px 0;">${dataStr}</textarea>
+                    <p style="font-size:14px;color:#666;">El sistema de compartir no está disponible. Copia este texto y guárdalo:</p>
+                    <textarea id="backup-text" readonly style="width:100%;height:300px;font-family:monospace;font-size:11px;padding:10px;border:1px solid #ddd;border-radius:5px;margin:10px 0;box-sizing:border-box;">${dataStr}</textarea>
                     <button onclick="copyBackupText()" style="width:100%;background:#4a90e2;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;margin-bottom:10px;">📋 Copiar al Portapapeles</button>
                     <button onclick="this.parentElement.parentElement.remove()" style="width:100%;background:#95a5a6;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;">Cerrar</button>
-                    <p style="font-size:12px;color:#666;margin-top:10px;">💡 Pega el contenido en un editor de texto y guárdalo como: <strong>${fileName}</strong></p>
+                    <p style="font-size:12px;color:#666;margin-top:10px;">💡 Guarda este texto en Drive, Email, WhatsApp, etc.</p>
                 </div>
             `;
             
@@ -701,9 +720,59 @@
             
             try {
                 document.execCommand('copy');
-                alert('✅ Backup copiado al portapapeles!\n\nAhora puedes pegarlo en tu app de notas, email, Drive, etc.');
+                alert('✅ Backup copiado al portapapeles!\n\nAhora puedes pegarlo en tu app de notas, email, Drive, etc.\n\nPara restaurar: Ve a Configuración > Restaurar Backup > Pegar Backup');
             } catch (err) {
                 alert('❌ No se pudo copiar automáticamente.\nPor favor, selecciona el texto manualmente y cópialo.');
+            }
+        }
+
+        function showPasteBackup() {
+            document.getElementById('paste-backup-modal').classList.add('active');
+            document.getElementById('paste-backup-text').value = '';
+            document.getElementById('paste-backup-text').focus();
+        }
+
+        function closePasteBackupModal() {
+            document.getElementById('paste-backup-modal').classList.remove('active');
+            document.getElementById('paste-backup-text').value = '';
+        }
+
+        function processPastedBackup() {
+            const pastedText = document.getElementById('paste-backup-text').value.trim();
+            
+            if(!pastedText) {
+                return alert('❌ No has pegado ningún contenido.\n\nPega el backup que copiaste y vuelve a intentarlo.');
+            }
+            
+            if(!confirm('⚠️ ¿Estás seguro?\n\nSe reemplazarán TODOS los datos actuales con los del backup.\n\nEsta acción no se puede deshacer.')) {
+                return;
+            }
+            
+            try {
+                const importedData = JSON.parse(pastedText);
+                
+                // Validar estructura básica
+                if(!importedData.users || !Array.isArray(importedData.users)) {
+                    throw new Error('Formato de backup inválido');
+                }
+                
+                // Asegurar campos necesarios
+                if(!importedData.categories) importedData.categories = ['Responsabilidad', 'Amabilidad', 'Respeto'];
+                if(!importedData.globalTasks) importedData.globalTasks = [];
+                if(!importedData.version) importedData.version = DB_VERSION;
+                
+                // Migrar si es necesario
+                db = migrateDatabase(importedData);
+                save();
+                
+                closePasteBackupModal();
+                alert('✅ Backup restaurado correctamente!\n\nSe han importado:\n- ' + db.users.length + ' usuarios\n- ' + db.categories.length + ' categorías');
+                
+                renderSettings();
+                renderHome();
+                
+            } catch(error) {
+                alert('❌ Error al restaurar backup:\n' + error.message + '\n\nAsegúrate de haber pegado el contenido completo del backup.');
             }
         }
 
