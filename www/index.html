@@ -5,55 +5,248 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Gestor Elite</title>
     <style>
-        :root { --primary: #4a90e2; --bg: #f0f2f5; --card: #ffffff; --danger: #ff4d4d; --success: #2ecc71; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding-bottom: 70px; }
-        .screen { display: none; padding: 20px; animation: fadeIn 0.3s; }
+        :root { 
+            --primary: #4a90e2; 
+            --bg: #f0f2f5; 
+            --card: #ffffff; 
+            --danger: #ff4d4d; 
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --info: #3498db;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding-bottom: 70px; 
+        }
+        .screen { 
+            display: none; 
+            padding: 20px; 
+            animation: fadeIn 0.3s; 
+        }
         .screen.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .card { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; }
-        button.secondary { background: #e0e0e0; color: #333; margin-top: 5px; }
+        .card { 
+            background: var(--card); 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+        }
+        button { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            width: 100%; 
+            cursor: pointer; 
+            margin-top: 5px;
+        }
+        button.secondary { background: #95a5a6; color: #fff; }
         button.danger { background: var(--danger); }
+        button.small { width: auto; padding: 8px 12px; font-size: 12px; }
+        
+        input, select { 
+            width: 100%; 
+            padding: 10px; 
+            margin: 5px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+        }
         
         /* Usuarios */
-        .user-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; margin-bottom: 10px; border-radius: 12px; border: 1px solid #eee; }
+        .user-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px; 
+            background: white; 
+            margin-bottom: 10px; 
+            border-radius: 12px; 
+            border: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .user-item:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         
         /* Configuración (Rueda dentada) */
-        .settings-btn { font-size: 40px; background: none; border: none; color: #888; cursor: pointer; display: block; margin: 20px auto; width: auto; }
+        .settings-btn { 
+            font-size: 50px; 
+            background: none; 
+            border: none; 
+            color: #888; 
+            cursor: pointer; 
+            display: block; 
+            margin: 30px auto; 
+            width: auto;
+            transition: transform 0.3s;
+        }
+        .settings-btn:hover { transform: rotate(90deg); }
 
         /* Tareas */
-        .task-card { border-left: 5px solid #ccc; }
-        .st-espera { border-left-color: #f1c40f; }
-        .st-proceso { border-left-color: #3498db; }
+        .task-card { 
+            border-left: 5px solid #ccc; 
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .task-card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .st-espera { border-left-color: var(--warning); }
+        .st-proceso { border-left-color: var(--info); }
         .st-terminada { border-left-color: var(--success); }
         .st-perdida { border-left-color: var(--danger); opacity: 0.7; }
 
-        .days-selector { display: flex; justify-content: space-between; margin: 10px 0; }
-        .day-check { display: flex; flex-direction: column; align-items: center; font-size: 10px; }
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .status-espera { background: var(--warning); color: #fff; }
+        .status-proceso { background: var(--info); color: #fff; }
+        .status-terminada { background: var(--success); color: #fff; }
+        .status-perdida { background: var(--danger); color: #fff; }
 
-        .user-checkbox-list { max-height: 100px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+        .days-selector { 
+            display: flex; 
+            justify-content: space-between; 
+            margin: 10px 0; 
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .day-check { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            font-size: 10px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            flex: 1;
+            min-width: 40px;
+        }
+
+        .user-checkbox-list { 
+            max-height: 150px; 
+            overflow-y: auto; 
+            border: 1px solid #ddd; 
+            padding: 10px; 
+            border-radius: 5px; 
+            margin: 10px 0;
+        }
+        .user-checkbox-list label {
+            display: block;
+            padding: 5px 0;
+        }
 
         /* Nav */
-        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #ddd; height: 60px; }
-        .nav-btn { flex: 1; border: none; background: none; font-size: 12px; color: #999; }
+        .nav-bottom { 
+            position: fixed; 
+            bottom: 0; 
+            width: 100%; 
+            background: #fff; 
+            display: flex; 
+            border-top: 1px solid #ddd; 
+            height: 60px; 
+            z-index: 100;
+        }
+        .nav-btn { 
+            flex: 1; 
+            border: none; 
+            background: none; 
+            font-size: 12px; 
+            color: #999; 
+            cursor: pointer;
+        }
         .nav-btn.active { color: var(--primary); font-weight: bold; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .modal-buttons button {
+            flex: 1;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .task-actions button {
+            flex: 1;
+            min-width: 80px;
+            font-size: 11px;
+            padding: 8px;
+        }
+
+        .admin-task-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+
+        .edit-task-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Pantalla de inicio -->
     <div id="screen-home" class="screen active">
         <h2 style="text-align: center; margin-top: 40px;">Hola, ¿quién eres?</h2>
-        <p style="text-align: center; color: #666;">Selecciona tu perfil o crea uno nuevo</p>
+        <p style="text-align: center; color: #666;">Selecciona tu perfil</p>
         <div id="users-list-home"></div>
         
         <button class="settings-btn" onclick="navTo('screen-settings')">⚙️</button>
     </div>
 
+    <!-- Pantalla de configuración -->
     <div id="screen-settings" class="screen">
-        <button class="secondary" onclick="navTo('screen-home')" style="width: auto;">⬅ Volver</button>
+        <button class="secondary small" onclick="navTo('screen-home')" style="margin-bottom: 15px;">⬅ Volver</button>
         <h3>Configuración</h3>
         
+        <!-- Gestionar Usuarios -->
         <div class="card">
             <h4>Gestionar Usuarios</h4>
             <input type="text" id="new-user-name" placeholder="Nombre nuevo usuario">
@@ -61,12 +254,13 @@
             <div id="users-manage-list" style="margin-top:15px;"></div>
         </div>
 
+        <!-- Crear Tarea Global -->
         <div class="card">
             <h4>Crear Tarea Global</h4>
             <input type="text" id="gt-title" placeholder="Título de la tarea">
             <input type="date" id="gt-date">
             
-            <p>Asignar a:</p>
+            <p style="margin: 10px 0 5px 0;"><strong>Asignar a:</strong></p>
             <div id="gt-user-assign" class="user-checkbox-list"></div>
 
             <div style="margin: 10px 0;">
@@ -74,27 +268,31 @@
             </div>
 
             <div id="repeat-options" style="display:none;">
+                <p style="margin: 5px 0;"><strong>Días de repetición:</strong></p>
                 <div class="days-selector">
-                    <label class="day-check">Lu<input type="checkbox" class="day-opt" value="1"></label>
-                    <label class="day-check">Ma<input type="checkbox" class="day-opt" value="2"></label>
-                    <label class="day-check">Mi<input type="checkbox" class="day-opt" value="3"></label>
-                    <label class="day-check">Ju<input type="checkbox" class="day-opt" value="4"></label>
-                    <label class="day-check">Vi<input type="checkbox" class="day-opt" value="5"></label>
-                    <label class="day-check">Sa<input type="checkbox" class="day-opt" value="6"></label>
-                    <label class="day-check">Do<input type="checkbox" class="day-opt" value="0"></label>
+                    <label class="day-check">L<input type="checkbox" class="day-opt" value="1"></label>
+                    <label class="day-check">M<input type="checkbox" class="day-opt" value="2"></label>
+                    <label class="day-check">X<input type="checkbox" class="day-opt" value="3"></label>
+                    <label class="day-check">J<input type="checkbox" class="day-opt" value="4"></label>
+                    <label class="day-check">V<input type="checkbox" class="day-opt" value="5"></label>
+                    <label class="day-check">S<input type="checkbox" class="day-opt" value="6"></label>
+                    <label class="day-check">D<input type="checkbox" class="day-opt" value="0"></label>
                 </div>
             </div>
 
-            <h4>Puntuaciones</h4>
-            <div id="gt-scores">
-                <label>Responsabilidad <input type="number" class="sc-in" data-cat="Responsabilidad" value="0"></label>
-                <label>Amabilidad <input type="number" class="sc-in" data-cat="Amabilidad" value="0"></label>
-                <label>Respeto <input type="number" class="sc-in" data-cat="Respeto" value="0"></label>
-            </div>
+            <h4 style="margin-top: 15px;">Puntuaciones</h4>
+            <div id="gt-scores"></div>
             <button onclick="saveGlobalTask()" style="margin-top:10px;">Crear Tareas</button>
+        </div>
+
+        <!-- Editar Tareas Globales -->
+        <div class="card">
+            <h4>Tareas Globales Creadas</h4>
+            <div id="global-tasks-list"></div>
         </div>
     </div>
 
+    <!-- Aplicación principal -->
     <div id="main-app" style="display:none;">
         <div id="view-tasks" class="screen">
             <h2 id="user-title">Tareas</h2>
@@ -119,12 +317,70 @@
         </nav>
     </div>
 
-    <script>
-        let db = JSON.parse(localStorage.getItem('eliteDB')) || { users: [], categories: ['Responsabilidad', 'Amabilidad', 'Respeto'] };
-        let currentUser = null;
-        const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    <!-- Modal para cambiar estado de tarea -->
+    <div id="status-modal" class="modal">
+        <div class="modal-content">
+            <h3>Cambiar estado de tarea</h3>
+            <p id="modal-task-title"></p>
+            <div class="task-actions">
+                <button class="secondary" onclick="changeTaskStatus('En espera')">⏳ En espera</button>
+                <button style="background: var(--info);" onclick="changeTaskStatus('En proceso')">🔄 En proceso</button>
+                <button style="background: var(--success);" onclick="changeTaskStatus('Terminada')">✅ Terminada</button>
+                <button class="danger" onclick="changeTaskStatus('Perdida')">❌ Perdida</button>
+            </div>
+            <button class="secondary" onclick="closeStatusModal()" style="margin-top: 15px;">Cancelar</button>
+        </div>
+    </div>
 
-        function save() { localStorage.setItem('eliteDB', JSON.stringify(db)); }
+    <!-- Modal para editar tarea global -->
+    <div id="edit-task-modal" class="modal">
+        <div class="modal-content">
+            <h3>Editar Tarea</h3>
+            <input type="text" id="edit-task-title" placeholder="Título">
+            <input type="date" id="edit-task-date">
+            
+            <div style="margin: 10px 0;">
+                <label><input type="checkbox" id="edit-task-repeat" onchange="toggleEditRepeat()"> ¿Se repite?</label>
+            </div>
+
+            <div id="edit-repeat-options" style="display:none;">
+                <p style="margin: 5px 0;"><strong>Días de repetición:</strong></p>
+                <div class="days-selector">
+                    <label class="day-check">L<input type="checkbox" class="edit-day-opt" value="1"></label>
+                    <label class="day-check">M<input type="checkbox" class="edit-day-opt" value="2"></label>
+                    <label class="day-check">X<input type="checkbox" class="edit-day-opt" value="3"></label>
+                    <label class="day-check">J<input type="checkbox" class="edit-day-opt" value="4"></label>
+                    <label class="day-check">V<input type="checkbox" class="edit-day-opt" value="5"></label>
+                    <label class="day-check">S<input type="checkbox" class="edit-day-opt" value="6"></label>
+                    <label class="day-check">D<input type="checkbox" class="edit-day-opt" value="0"></label>
+                </div>
+            </div>
+
+            <h4>Puntuaciones</h4>
+            <div id="edit-task-scores"></div>
+
+            <div class="modal-buttons">
+                <button onclick="saveEditedTask()">Guardar</button>
+                <button class="secondary" onclick="closeEditModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('eliteDB')) || { 
+            users: [], 
+            categories: ['Responsabilidad', 'Amabilidad', 'Respeto'],
+            globalTasks: [] // Tareas creadas desde configuración
+        };
+        let currentUser = null;
+        let currentTaskId = null;
+        let currentEditTaskGroupId = null;
+        const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+        const dayNamesShort = ["D", "L", "M", "X", "J", "V", "S"];
+
+        function save() { 
+            localStorage.setItem('eliteDB', JSON.stringify(db)); 
+        }
 
         function navTo(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -136,54 +392,123 @@
         function renderHome() {
             const list = document.getElementById('users-list-home');
             list.innerHTML = '';
-            db.users.forEach(u => {
-                list.innerHTML += `<div class="user-item" onclick="login(${u.id})"><strong>${u.name}</strong></div>`;
-            });
+            if(db.users.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#999;">No hay usuarios. Crea uno en configuración.</p>';
+            } else {
+                db.users.forEach(u => {
+                    list.innerHTML += `<div class="user-item" onclick="login(${u.id})"><strong>${u.name}</strong><span>→</span></div>`;
+                });
+            }
         }
 
         function renderSettings() {
+            // Usuarios
             const list = document.getElementById('users-manage-list');
             list.innerHTML = '';
             db.users.forEach(u => {
                 list.innerHTML += `
-                    <div class="user-item">
-                        <input type="text" value="${u.name}" onchange="updateUserName(${u.id}, this.value)">
-                        <button class="danger" onclick="deleteUser(${u.id})" style="width:auto; padding:5px;">Eliminar</button>
+                    <div class="user-item" style="cursor: default;">
+                        <input type="text" value="${u.name}" onchange="updateUserName(${u.id}, this.value)" style="width: 60%; margin: 0;">
+                        <button class="danger small" onclick="deleteUser(${u.id})">Eliminar</button>
                     </div>`;
             });
 
+            // Lista asignación usuarios
             const assignList = document.getElementById('gt-user-assign');
             assignList.innerHTML = '';
-            db.users.forEach(u => {
-                assignList.innerHTML += `<label style="display:block;"><input type="checkbox" class="assign-user" value="${u.id}"> ${u.name}</label>`;
+            if(db.users.length === 0) {
+                assignList.innerHTML = '<p style="color:#999; font-size:12px;">Crea usuarios primero</p>';
+            } else {
+                db.users.forEach(u => {
+                    assignList.innerHTML += `<label><input type="checkbox" class="assign-user" value="${u.id}"> ${u.name}</label>`;
+                });
+            }
+
+            // Puntuaciones
+            const scoresDiv = document.getElementById('gt-scores');
+            scoresDiv.innerHTML = '';
+            db.categories.forEach(cat => {
+                scoresDiv.innerHTML += `<label>${cat} <input type="number" class="sc-in" data-cat="${cat}" value="0" min="0"></label>`;
+            });
+
+            // Tareas globales
+            renderGlobalTasks();
+        }
+
+        function renderGlobalTasks() {
+            const container = document.getElementById('global-tasks-list');
+            container.innerHTML = '';
+            
+            // Agrupar por groupId
+            const groups = {};
+            db.globalTasks.forEach(gt => {
+                if(!groups[gt.groupId]) groups[gt.groupId] = [];
+                groups[gt.groupId].push(gt);
+            });
+
+            if(Object.keys(groups).length === 0) {
+                container.innerHTML = '<p style="color:#999; font-size:12px;">No hay tareas globales creadas</p>';
+                return;
+            }
+
+            Object.keys(groups).forEach(groupId => {
+                const tasks = groups[groupId];
+                const firstTask = tasks[0];
+                const assignedUsers = db.users.filter(u => tasks.some(t => t.userId === u.id)).map(u => u.name).join(', ');
+                
+                container.innerHTML += `
+                    <div class="card admin-task-card" style="position: relative;">
+                        <button class="edit-task-btn" onclick="openEditTaskModal('${groupId}')">✏️ Editar</button>
+                        <strong>${firstTask.baseTitle || firstTask.title}</strong><br>
+                        <small>📅 ${firstTask.date || 'Sin fecha'}</small><br>
+                        <small>👥 ${assignedUsers}</small><br>
+                        ${firstTask.isRepeat ? '<small>🔄 Repetitiva (' + dayNamesShort.filter((d,i) => firstTask.repeatDays.includes(i)).join(', ') + ')</small>' : ''}
+                    </div>
+                `;
             });
         }
 
         function createUser() {
-            const name = document.getElementById('new-user-name').value;
-            if(!name) return;
+            const name = document.getElementById('new-user-name').value.trim();
+            if(!name) return alert('Escribe un nombre');
+            if(db.users.some(u => u.name === name)) return alert('Ya existe un usuario con ese nombre');
+            
             db.users.push({ id: Date.now(), name, tasks: [] });
             save();
             document.getElementById('new-user-name').value = '';
             renderSettings();
+            renderHome();
         }
 
         function updateUserName(id, name) {
             const u = db.users.find(u => u.id === id);
-            if(u) u.name = name;
-            save();
-        }
-
-        function deleteUser(id) {
-            if(confirm('¿Borrar usuario?')) {
-                db.users = db.users.filter(u => u.id !== id);
+            if(u && name.trim()) {
+                u.name = name.trim();
                 save();
-                renderSettings();
             }
         }
 
+        function deleteUser(id) {
+            if(!confirm('¿Borrar usuario? Se eliminarán todas sus tareas.')) return;
+            
+            // Eliminar tareas globales asociadas
+            db.globalTasks = db.globalTasks.filter(gt => gt.userId !== id);
+            
+            // Eliminar usuario
+            db.users = db.users.filter(u => u.id !== id);
+            save();
+            renderSettings();
+            renderHome();
+        }
+
         function toggleRepeat() {
-            document.getElementById('repeat-options').style.display = document.getElementById('gt-repeat').checked ? 'block' : 'none';
+            document.getElementById('repeat-options').style.display = 
+                document.getElementById('gt-repeat').checked ? 'block' : 'none';
+        }
+
+        function toggleEditRepeat() {
+            document.getElementById('edit-repeat-options').style.display = 
+                document.getElementById('edit-task-repeat').checked ? 'block' : 'none';
         }
 
         function login(id) {
@@ -196,55 +521,105 @@
 
         function logout() {
             document.getElementById('main-app').style.display = 'none';
+            currentUser = null;
             navTo('screen-home');
         }
 
         function showView(viewId) {
             document.querySelectorAll('#main-app .screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
             document.getElementById(viewId).classList.add('active');
+            
+            const btnIndex = ['view-tasks', 'view-calendar', 'view-scores'].indexOf(viewId);
+            if(btnIndex >= 0) {
+                document.querySelectorAll('.nav-btn')[btnIndex].classList.add('active');
+            }
+
             if(viewId === 'view-tasks') renderTasks();
             if(viewId === 'view-calendar') renderCalendar();
             if(viewId === 'view-scores') renderScores();
         }
 
-        // LÓGICA DE TAREAS Y REPETICIÓN
         function saveGlobalTask() {
-            const title = document.getElementById('gt-title').value;
+            const title = document.getElementById('gt-title').value.trim();
             const startDate = document.getElementById('gt-date').value;
             const isRepeat = document.getElementById('gt-repeat').checked;
             const assignedUsers = Array.from(document.querySelectorAll('.assign-user:checked')).map(el => parseInt(el.value));
             
-            if(!title || assignedUsers.length === 0) return alert("Falta título o usuarios");
+            if(!title) return alert("Escribe un título para la tarea");
+            if(assignedUsers.length === 0) return alert("Selecciona al menos un usuario");
 
             let scores = {};
-            document.querySelectorAll('.sc-in').forEach(i => scores[i.dataset.cat] = parseInt(i.value) || 0);
-
-            assignedUsers.forEach(uId => {
-                const user = db.users.find(u => u.id === uId);
-                const groupId = Date.now() + Math.random();
-
-                if(!isRepeat) {
-                    user.tasks.push({ id: Date.now() + Math.random(), title, date: startDate, status: 'En espera', scores, isRepeat: false });
-                } else {
-                    const selectedDays = Array.from(document.querySelectorAll('.day-opt:checked')).map(el => parseInt(el.value));
-                    createRepeatedTasks(user, title, startDate, selectedDays, scores, groupId);
-                }
+            document.querySelectorAll('.sc-in').forEach(i => {
+                scores[i.dataset.cat] = parseInt(i.value) || 0;
             });
 
+            const groupId = 'group_' + Date.now();
+
+            if(!isRepeat) {
+                // Tarea simple
+                assignedUsers.forEach(userId => {
+                    const user = db.users.find(u => u.id === userId);
+                    const taskId = Date.now() + Math.random();
+                    
+                    const task = {
+                        id: taskId,
+                        groupId: groupId,
+                        title: title,
+                        baseTitle: title,
+                        date: startDate,
+                        status: 'En espera',
+                        scores: scores,
+                        isRepeat: false,
+                        userId: userId
+                    };
+                    
+                    user.tasks.push(task);
+                    db.globalTasks.push(task);
+                });
+            } else {
+                // Tarea repetitiva
+                const selectedDays = Array.from(document.querySelectorAll('.day-opt:checked')).map(el => parseInt(el.value));
+                if(selectedDays.length === 0) return alert("Selecciona al menos un día de repetición");
+                
+                assignedUsers.forEach(userId => {
+                    const user = db.users.find(u => u.id === userId);
+                    createRepeatedTasks(user, title, startDate, selectedDays, scores, groupId, userId);
+                });
+            }
+
             save();
-            alert("Tareas creadas");
-            navTo('screen-home');
+            alert("Tareas creadas correctamente");
+            
+            // Limpiar formulario
+            document.getElementById('gt-title').value = '';
+            document.getElementById('gt-date').value = '';
+            document.getElementById('gt-repeat').checked = false;
+            toggleRepeat();
+            document.querySelectorAll('.assign-user').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.day-opt').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.sc-in').forEach(i => i.value = 0);
+            
+            renderSettings();
         }
 
-        function createRepeatedTasks(user, title, startDateStr, days, scores, groupId) {
-            let current = startDateStr ? new Date(startDateStr) : new Date();
+        function createRepeatedTasks(user, title, startDateStr, days, scores, groupId, userId) {
+            let current = startDateStr ? new Date(startDateStr + 'T00:00:00') : new Date();
+            current.setHours(0, 0, 0, 0);
+            
             let count = 0;
-            // Generar hoy y las próximas ocurrencias hasta completar 3 eventos
-            while(count < 4) { // 4 para asegurar hoy + 3 futuros
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Buscar primera ocurrencia (hoy o futura)
+            while(count < 3) {
                 if(days.includes(current.getDay())) {
                     const dateStr = current.toISOString().split('T')[0];
-                    user.tasks.push({
-                        id: Date.now() + Math.random(),
+                    const taskId = Date.now() + Math.random() + count;
+                    
+                    const task = {
+                        id: taskId,
                         groupId: groupId,
                         title: `${title}. ${dayNames[current.getDay()]}`,
                         baseTitle: title,
@@ -252,72 +627,293 @@
                         status: 'En espera',
                         scores: scores,
                         isRepeat: true,
-                        repeatDays: days
-                    });
+                        repeatDays: days,
+                        userId: userId
+                    };
+                    
+                    user.tasks.push(task);
+                    db.globalTasks.push(task);
                     count++;
                 }
                 current.setDate(current.getDate() + 1);
             }
         }
 
-        function renderTasks() {
-            const container = document.getElementById('tasks-container');
-            container.innerHTML = '';
-            // Tareas no archivadas
-            currentUser.tasks.filter(t => t.status === 'En espera' || t.status === 'En proceso').forEach(t => {
-                container.innerHTML += `
-                    <div class="card task-card st-${t.status.toLowerCase().replace(" ", "-")}" onclick="changeStatus(${t.id})">
-                        <strong>${t.title}</strong><br>
-                        <small>${t.date || 'Sin fecha'} | Estado: ${t.status}</small>
-                        ${t.isRepeat ? '<br><small>🔄 Repetitiva</small>' : ''}
-                    </div>`;
+        function openEditTaskModal(groupId) {
+            currentEditTaskGroupId = groupId;
+            const tasks = db.globalTasks.filter(t => t.groupId === groupId);
+            if(tasks.length === 0) return;
+            
+            const firstTask = tasks[0];
+            
+            document.getElementById('edit-task-title').value = firstTask.baseTitle || firstTask.title;
+            document.getElementById('edit-task-date').value = firstTask.date || '';
+            document.getElementById('edit-task-repeat').checked = firstTask.isRepeat;
+            
+            if(firstTask.isRepeat) {
+                document.getElementById('edit-repeat-options').style.display = 'block';
+                document.querySelectorAll('.edit-day-opt').forEach(cb => {
+                    cb.checked = firstTask.repeatDays.includes(parseInt(cb.value));
+                });
+            } else {
+                document.getElementById('edit-repeat-options').style.display = 'none';
+            }
+            
+            // Puntuaciones
+            const scoresDiv = document.getElementById('edit-task-scores');
+            scoresDiv.innerHTML = '';
+            db.categories.forEach(cat => {
+                const val = firstTask.scores[cat] || 0;
+                scoresDiv.innerHTML += `<label>${cat} <input type="number" class="edit-sc-in" data-cat="${cat}" value="${val}" min="0"></label>`;
             });
+            
+            document.getElementById('edit-task-modal').classList.add('active');
         }
 
-        function changeStatus(taskId) {
-            const t = currentUser.tasks.find(t => t.id === taskId);
-            const next = { "En espera": "En proceso", "En proceso": "Terminada", "Terminada": "Perdida", "Perdida": "En espera" };
-            t.status = next[t.status];
+        function closeEditModal() {
+            document.getElementById('edit-task-modal').classList.remove('active');
+            currentEditTaskGroupId = null;
+        }
+
+        function saveEditedTask() {
+            if(!currentEditTaskGroupId) return;
             
-            if(t.status === 'Terminada' || t.status === 'Perdida') {
-                // Al archivar, si es repetitiva y cambiamos el check de repetición
-                // (En esta versión simplificada, al archivar una se mantiene la lógica de las siguientes)
+            const title = document.getElementById('edit-task-title').value.trim();
+            const date = document.getElementById('edit-task-date').value;
+            const isRepeat = document.getElementById('edit-task-repeat').checked;
+            
+            if(!title) return alert("El título no puede estar vacío");
+            
+            let scores = {};
+            document.querySelectorAll('.edit-sc-in').forEach(i => {
+                scores[i.dataset.cat] = parseInt(i.value) || 0;
+            });
+            
+            const oldTasks = db.globalTasks.filter(t => t.groupId === currentEditTaskGroupId);
+            const affectedUserIds = [...new Set(oldTasks.map(t => t.userId))];
+            
+            // Eliminar tareas antiguas del grupo
+            db.globalTasks = db.globalTasks.filter(t => t.groupId !== currentEditTaskGroupId);
+            affectedUserIds.forEach(userId => {
+                const user = db.users.find(u => u.id === userId);
+                if(user) {
+                    user.tasks = user.tasks.filter(t => t.groupId !== currentEditTaskGroupId);
+                }
+            });
+            
+            // Crear nuevas tareas
+            if(!isRepeat) {
+                affectedUserIds.forEach(userId => {
+                    const user = db.users.find(u => u.id === userId);
+                    const taskId = Date.now() + Math.random();
+                    
+                    const task = {
+                        id: taskId,
+                        groupId: currentEditTaskGroupId,
+                        title: title,
+                        baseTitle: title,
+                        date: date,
+                        status: 'En espera',
+                        scores: scores,
+                        isRepeat: false,
+                        userId: userId
+                    };
+                    
+                    user.tasks.push(task);
+                    db.globalTasks.push(task);
+                });
+            } else {
+                const selectedDays = Array.from(document.querySelectorAll('.edit-day-opt:checked')).map(el => parseInt(el.value));
+                if(selectedDays.length === 0) return alert("Selecciona al menos un día");
+                
+                affectedUserIds.forEach(userId => {
+                    const user = db.users.find(u => u.id === userId);
+                    createRepeatedTasks(user, title, date, selectedDays, scores, currentEditTaskGroupId, userId);
+                });
             }
             
             save();
+            alert("Tarea actualizada");
+            closeEditModal();
+            renderSettings();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+            
+            // Filtrar tareas activas
+            const activeTasks = currentUser.tasks.filter(t => 
+                t.status === 'En espera' || t.status === 'En proceso'
+            );
+            
+            if(activeTasks.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px;">No tienes tareas pendientes 🎉</p>';
+                return;
+            }
+            
+            activeTasks.forEach(t => {
+                let statusClass = 'espera';
+                if(t.status === 'En proceso') statusClass = 'proceso';
+                
+                container.innerHTML += `
+                    <div class="card task-card st-${statusClass}" onclick="openStatusModal(${t.id})">
+                        <span class="status-indicator status-${statusClass}">${t.status}</span>
+                        <h4 style="margin: 5px 0;">${t.title}</h4>
+                        <small>📅 ${t.date || 'Sin fecha'}</small>
+                        ${t.isRepeat ? '<br><small style="color: var(--primary);">🔄 Repetitiva</small>' : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function openStatusModal(taskId) {
+            currentTaskId = taskId;
+            const task = currentUser.tasks.find(t => t.id === taskId);
+            if(!task) return;
+            
+            document.getElementById('modal-task-title').innerText = task.title;
+            document.getElementById('status-modal').classList.add('active');
+        }
+
+        function closeStatusModal() {
+            document.getElementById('status-modal').classList.remove('active');
+            currentTaskId = null;
+        }
+
+        function changeTaskStatus(newStatus) {
+            if(!currentTaskId) return;
+            
+            const task = currentUser.tasks.find(t => t.id === currentTaskId);
+            if(!task) return;
+            
+            task.status = newStatus;
+            
+            // Si se completa o pierde una tarea repetitiva, generar siguiente
+            if((newStatus === 'Terminada' || newStatus === 'Perdida') && task.isRepeat && task.repeatDays) {
+                generateNextRepeatingTask(task);
+            }
+            
+            save();
+            closeStatusModal();
             renderTasks();
+            renderCalendar();
+            renderScores();
+        }
+
+        function generateNextRepeatingTask(completedTask) {
+            const taskDate = new Date(completedTask.date + 'T00:00:00');
+            let nextDate = new Date(taskDate);
+            nextDate.setDate(nextDate.getDate() + 1);
+            
+            let found = false;
+            let attempts = 0;
+            
+            // Buscar siguiente ocurrencia (máximo 14 días adelante)
+            while(!found && attempts < 14) {
+                if(completedTask.repeatDays.includes(nextDate.getDay())) {
+                    const nextDateStr = nextDate.toISOString().split('T')[0];
+                    
+                    // Verificar que no exista ya
+                    const exists = currentUser.tasks.some(t => 
+                        t.groupId === completedTask.groupId && 
+                        t.date === nextDateStr &&
+                        t.status !== 'Terminada' &&
+                        t.status !== 'Perdida'
+                    );
+                    
+                    if(!exists) {
+                        const newTaskId = Date.now() + Math.random();
+                        const newTask = {
+                            id: newTaskId,
+                            groupId: completedTask.groupId,
+                            title: `${completedTask.baseTitle}. ${dayNames[nextDate.getDay()]}`,
+                            baseTitle: completedTask.baseTitle,
+                            date: nextDateStr,
+                            status: 'En espera',
+                            scores: completedTask.scores,
+                            isRepeat: true,
+                            repeatDays: completedTask.repeatDays,
+                            userId: currentUser.id
+                        };
+                        
+                        currentUser.tasks.push(newTask);
+                        
+                        // Actualizar en db.users
+                        const userIndex = db.users.findIndex(u => u.id === currentUser.id);
+                        db.users[userIndex] = currentUser;
+                        
+                        found = true;
+                    }
+                }
+                nextDate.setDate(nextDate.getDate() + 1);
+                attempts++;
+            }
         }
 
         function renderCalendar() {
             const container = document.getElementById('calendar-container');
             container.innerHTML = '';
-            const dated = currentUser.tasks.filter(t => t.date).sort((a,b) => new Date(a.date) - new Date(b.date));
-            dated.forEach(t => {
+            
+            const datedTasks = currentUser.tasks
+                .filter(t => t.date)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            if(datedTasks.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px;">No hay tareas con fecha asignada</p>';
+                return;
+            }
+            
+            let lastDate = '';
+            datedTasks.forEach(t => {
+                if(t.date !== lastDate) {
+                    const dateObj = new Date(t.date + 'T00:00:00');
+                    const dayName = dayNames[dateObj.getDay()];
+                    container.innerHTML += `<h3 style="color: var(--primary); margin-top: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 5px;">${t.date} - ${dayName}</h3>`;
+                    lastDate = t.date;
+                }
+                
+                let statusClass = 'espera';
+                if(t.status === 'En proceso') statusClass = 'proceso';
+                if(t.status === 'Terminada') statusClass = 'terminada';
+                if(t.status === 'Perdida') statusClass = 'perdida';
+                
                 container.innerHTML += `
-                    <div class="card st-${t.status.toLowerCase().replace(" ", "-")}" style="border-left:4px solid">
-                        <small>${t.date}</small><br>
-                        <strong>${t.title}</strong> (${t.status})
-                    </div>`;
+                    <div class="card st-${statusClass}" style="border-left: 4px solid;">
+                        <span class="status-indicator status-${statusClass}">${t.status}</span>
+                        <strong>${t.title}</strong>
+                    </div>
+                `;
             });
         }
 
         function renderScores() {
             const container = document.getElementById('scores-container');
             container.innerHTML = '';
+            
             let totals = {};
             db.categories.forEach(c => totals[c] = 0);
 
             currentUser.tasks.forEach(t => {
                 if(t.status === 'Terminada') {
-                    for(let cat in t.scores) totals[cat] += t.scores[cat];
+                    for(let cat in t.scores) {
+                        if(!totals[cat]) totals[cat] = 0;
+                        totals[cat] += t.scores[cat];
+                    }
                 }
             });
 
             for(let cat in totals) {
-                container.innerHTML += `<div class="card"><strong>${cat}:</strong> ${totals[cat]} puntos</div>`;
+                container.innerHTML += `
+                    <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="font-size: 18px;">${cat}</strong> 
+                        <span style="font-size: 24px; color: var(--success); font-weight: bold;">${totals[cat]}</span>
+                    </div>
+                `;
             }
         }
 
+        // Inicializar
         renderHome();
     </script>
 </body>
