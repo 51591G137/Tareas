@@ -3,351 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Gestor Personal</title>
+    <title>Gestor Elite</title>
     <style>
-        /* ESTILOS (CSS) - Diseño sencillo y limpio */
-        :root { --primary: #007bff; --bg: #f4f4f9; --card: #fff; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; padding-bottom: 80px; }
-        h1, h2, h3 { margin: 0; }
-        
-        /* Navegación inferior */
-        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #ccc; height: 60px; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
-        .nav-btn { flex: 1; border: none; background: none; font-size: 12px; font-weight: bold; color: #666; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .nav-btn.active { color: var(--primary); }
-        
-        /* Pantallas */
-        .screen { display: none; padding: 20px; }
+        :root { --primary: #4a90e2; --bg: #f0f2f5; --card: #ffffff; --danger: #ff4d4d; --success: #2ecc71; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding-bottom: 70px; }
+        .screen { display: none; padding: 20px; animation: fadeIn 0.3s; }
         .screen.active { display: block; }
-
-        /* Componentes */
-        .card { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        button { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 5px; font-size: 16px; cursor: pointer; }
-        button.secondary { background: #6c757d; }
-        button.danger { background: #dc3545; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .card { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; }
+        button.secondary { background: #e0e0e0; color: #333; margin-top: 5px; }
+        button.danger { background: var(--danger); }
         
         /* Usuarios */
-        .user-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; margin-bottom: 10px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; }
+        .user-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; margin-bottom: 10px; border-radius: 12px; border: 1px solid #eee; }
         
-        /* Tareas */
-        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; color: white; margin-bottom: 5px; }
-        .st-espera { background: #ffc107; color: #333; }
-        .st-proceso { background: #17a2b8; }
-        .st-completada { background: #28a745; }
-        .st-terminada { background: #343a40; } /* Diferencia visual solicitada */
+        /* Configuración (Rueda dentada) */
+        .settings-btn { font-size: 40px; background: none; border: none; color: #888; cursor: pointer; display: block; margin: 20px auto; width: auto; }
 
-        .score-row { display: flex; justify-content: space-between; margin-top: 5px; font-size: 14px; border-bottom: 1px solid #eee; padding: 5px 0; }
-        .calendar-date { font-weight: bold; color: var(--primary); margin-top: 20px; border-bottom: 2px solid var(--primary); display: inline-block; }
+        /* Tareas */
+        .task-card { border-left: 5px solid #ccc; }
+        .st-espera { border-left-color: #f1c40f; }
+        .st-proceso { border-left-color: #3498db; }
+        .st-terminada { border-left-color: var(--success); }
+        .st-perdida { border-left-color: var(--danger); opacity: 0.7; }
+
+        .days-selector { display: flex; justify-content: space-between; margin: 10px 0; }
+        .day-check { display: flex; flex-direction: column; align-items: center; font-size: 10px; }
+
+        .user-checkbox-list { max-height: 100px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+
+        /* Nav */
+        .nav-bottom { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #ddd; height: 60px; }
+        .nav-btn { flex: 1; border: none; background: none; font-size: 12px; color: #999; }
+        .nav-btn.active { color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="screen-users" class="screen active">
-        <h2>Hola, ¿quién eres?</h2>
-        <p>Selecciona tu perfil o crea uno nuevo.</p>
-        <div id="users-list"></div>
+    <div id="screen-home" class="screen active">
+        <h2 style="text-align: center; margin-top: 40px;">Hola, ¿quién eres?</h2>
+        <p style="text-align: center; color: #666;">Selecciona tu perfil o crea uno nuevo</p>
+        <div id="users-list-home"></div>
+        
+        <button class="settings-btn" onclick="navTo('screen-settings')">⚙️</button>
+    </div>
+
+    <div id="screen-settings" class="screen">
+        <button class="secondary" onclick="navTo('screen-home')" style="width: auto;">⬅ Volver</button>
+        <h3>Configuración</h3>
+        
         <div class="card">
-            <h3>Nuevo Usuario</h3>
-            <input type="text" id="new-user-name" placeholder="Nombre...">
-            <button onclick="createUser()">Crear Perfil</button>
+            <h4>Gestionar Usuarios</h4>
+            <input type="text" id="new-user-name" placeholder="Nombre nuevo usuario">
+            <button onclick="createUser()">Añadir Usuario</button>
+            <div id="users-manage-list" style="margin-top:15px;"></div>
+        </div>
+
+        <div class="card">
+            <h4>Crear Tarea Global</h4>
+            <input type="text" id="gt-title" placeholder="Título de la tarea">
+            <input type="date" id="gt-date">
+            
+            <p>Asignar a:</p>
+            <div id="gt-user-assign" class="user-checkbox-list"></div>
+
+            <div style="margin: 10px 0;">
+                <label><input type="checkbox" id="gt-repeat" onchange="toggleRepeat()"> ¿Se repite?</label>
+            </div>
+
+            <div id="repeat-options" style="display:none;">
+                <div class="days-selector">
+                    <label class="day-check">Lu<input type="checkbox" class="day-opt" value="1"></label>
+                    <label class="day-check">Ma<input type="checkbox" class="day-opt" value="2"></label>
+                    <label class="day-check">Mi<input type="checkbox" class="day-opt" value="3"></label>
+                    <label class="day-check">Ju<input type="checkbox" class="day-opt" value="4"></label>
+                    <label class="day-check">Vi<input type="checkbox" class="day-opt" value="5"></label>
+                    <label class="day-check">Sa<input type="checkbox" class="day-opt" value="6"></label>
+                    <label class="day-check">Do<input type="checkbox" class="day-opt" value="0"></label>
+                </div>
+            </div>
+
+            <h4>Puntuaciones</h4>
+            <div id="gt-scores">
+                <label>Responsabilidad <input type="number" class="sc-in" data-cat="Responsabilidad" value="0"></label>
+                <label>Amabilidad <input type="number" class="sc-in" data-cat="Amabilidad" value="0"></label>
+                <label>Respeto <input type="number" class="sc-in" data-cat="Respeto" value="0"></label>
+            </div>
+            <button onclick="saveGlobalTask()" style="margin-top:10px;">Crear Tareas</button>
         </div>
     </div>
 
     <div id="main-app" style="display:none;">
-        <div style="padding: 15px; background: #fff; border-bottom: 1px solid #ddd; display:flex; justify-content:space-between; align-items:center;">
-            <h2 id="current-user-display">Usuario</h2>
-            <button class="secondary" onclick="logout()" style="padding: 5px 10px; font-size: 12px;">Salir</button>
-        </div>
-
         <div id="view-tasks" class="screen">
-            <h3>Mis Tareas</h3>
-            <button onclick="showAddTaskForm()" style="width:100%; margin-bottom:15px;">+ Nueva Tarea</button>
-            
-            <div id="add-task-form" class="card" style="display:none;">
-                <h4>Nueva Tarea</h4>
-                <input type="text" id="t-title" placeholder="Título de la tarea">
-                <label>Fecha (Opcional - Para calendario)</label>
-                <input type="date" id="t-date">
-                <label>Estado</label>
-                <select id="t-status">
-                    <option value="En espera">En espera</option>
-                    <option value="En proceso">En proceso</option>
-                    <option value="Completada">Completada</option>
-                    <option value="Terminada">Terminada</option>
-                </select>
-                
-                <h4>Puntuaciones</h4>
-                <div id="score-inputs"></div> <input type="text" id="new-cat-input" placeholder="Nueva categoría (ej. Puntualidad)" style="margin-top:10px;">
-                <button class="secondary" onclick="addCategory()" style="width:auto; font-size:12px;">+ Añadir Categoría</button>
-                
-                <div style="margin-top:15px; display:flex; gap:10px;">
-                    <button onclick="saveTask()">Guardar Tarea</button>
-                    <button class="secondary" onclick="hideAddTaskForm()">Cancelar</button>
-                </div>
-            </div>
-
-            <div id="tasks-list">
-                </div>
+            <h2 id="user-title">Tareas</h2>
+            <div id="tasks-container"></div>
         </div>
 
         <div id="view-calendar" class="screen">
-            <h3>Calendario</h3>
-            <p>Tareas organizadas por fecha.</p>
-            <div id="calendar-list"></div>
+            <h2>Calendario</h2>
+            <div id="calendar-container"></div>
         </div>
 
         <div id="view-scores" class="screen">
-            <h3>Mi Puntuación Total</h3>
-            <div class="card">
-                <div id="total-scores-list"></div>
-            </div>
+            <h2>Mi Puntuación</h2>
+            <div id="scores-container"></div>
         </div>
 
         <nav class="nav-bottom">
-            <button class="nav-btn active" onclick="navTo('view-tasks', this)">Tareas</button>
-            <button class="nav-btn" onclick="navTo('view-calendar', this)">Calendario</button>
-            <button class="nav-btn" onclick="navTo('view-scores', this)">Puntuación</button>
+            <button class="nav-btn" onclick="showView('view-tasks')">Tareas</button>
+            <button class="nav-btn" onclick="showView('view-calendar')">Calendario</button>
+            <button class="nav-btn" onclick="showView('view-scores')">Puntos</button>
+            <button class="nav-btn" onclick="logout()">Salir</button>
         </nav>
     </div>
 
     <script>
-        // --- LÓGICA (JAVASCRIPT) ---
-
-        // Variables Globales
-        let db = { users: [], categories: ['Responsabilidad', 'Amabilidad', 'Respeto'] };
+        let db = JSON.parse(localStorage.getItem('eliteDB')) || { users: [], categories: ['Responsabilidad', 'Amabilidad', 'Respeto'] };
         let currentUser = null;
+        const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
-        // Cargar datos al iniciar
-        function loadData() {
-            const data = localStorage.getItem('appOfflineDB');
-            if(data) db = JSON.parse(data);
-            renderUsers();
+        function save() { localStorage.setItem('eliteDB', JSON.stringify(db)); }
+
+        function navTo(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'screen-settings') renderSettings();
+            if(id === 'screen-home') renderHome();
         }
 
-        // Guardar datos
-        function saveData() {
-            localStorage.setItem('appOfflineDB', JSON.stringify(db));
-        }
-
-        // --- GESTIÓN DE USUARIOS ---
-        function renderUsers() {
-            const list = document.getElementById('users-list');
+        function renderHome() {
+            const list = document.getElementById('users-list-home');
             list.innerHTML = '';
-            db.users.forEach(user => {
-                const div = document.createElement('div');
-                div.className = 'user-item';
-                div.innerHTML = `<strong>${user.name}</strong> <span>></span>`;
-                div.onclick = () => login(user.id);
-                list.appendChild(div);
+            db.users.forEach(u => {
+                list.innerHTML += `<div class="user-item" onclick="login(${u.id})"><strong>${u.name}</strong></div>`;
+            });
+        }
+
+        function renderSettings() {
+            const list = document.getElementById('users-manage-list');
+            list.innerHTML = '';
+            db.users.forEach(u => {
+                list.innerHTML += `
+                    <div class="user-item">
+                        <input type="text" value="${u.name}" onchange="updateUserName(${u.id}, this.value)">
+                        <button class="danger" onclick="deleteUser(${u.id})" style="width:auto; padding:5px;">Eliminar</button>
+                    </div>`;
+            });
+
+            const assignList = document.getElementById('gt-user-assign');
+            assignList.innerHTML = '';
+            db.users.forEach(u => {
+                assignList.innerHTML += `<label style="display:block;"><input type="checkbox" class="assign-user" value="${u.id}"> ${u.name}</label>`;
             });
         }
 
         function createUser() {
-            const nameInput = document.getElementById('new-user-name');
-            const name = nameInput.value.trim();
-            if(!name) return alert("Escribe un nombre");
-            
-            const newUser = {
-                id: Date.now(),
-                name: name,
-                tasks: [] // Cada usuario tiene sus tareas aisladas
-            };
-            db.users.push(newUser);
-            saveData();
-            nameInput.value = '';
-            renderUsers();
+            const name = document.getElementById('new-user-name').value;
+            if(!name) return;
+            db.users.push({ id: Date.now(), name, tasks: [] });
+            save();
+            document.getElementById('new-user-name').value = '';
+            renderSettings();
         }
 
-        function login(userId) {
-            currentUser = db.users.find(u => u.id === userId);
-            document.getElementById('screen-users').classList.remove('active');
+        function updateUserName(id, name) {
+            const u = db.users.find(u => u.id === id);
+            if(u) u.name = name;
+            save();
+        }
+
+        function deleteUser(id) {
+            if(confirm('¿Borrar usuario?')) {
+                db.users = db.users.filter(u => u.id !== id);
+                save();
+                renderSettings();
+            }
+        }
+
+        function toggleRepeat() {
+            document.getElementById('repeat-options').style.display = document.getElementById('gt-repeat').checked ? 'block' : 'none';
+        }
+
+        function login(id) {
+            currentUser = db.users.find(u => u.id === id);
+            document.getElementById('screen-home').classList.remove('active');
             document.getElementById('main-app').style.display = 'block';
-            document.getElementById('current-user-display').innerText = currentUser.name;
-            
-            // Navegar a tareas por defecto y renderizar
-            navTo('view-tasks', document.querySelectorAll('.nav-btn')[0]);
-            renderCategoriesInput();
-            renderTasks();
-            renderScores();
+            document.getElementById('user-title').innerText = `Tareas de ${currentUser.name}`;
+            showView('view-tasks');
         }
 
         function logout() {
-            currentUser = null;
             document.getElementById('main-app').style.display = 'none';
-            document.getElementById('screen-users').classList.add('active');
+            navTo('screen-home');
         }
 
-        // --- NAVEGACIÓN ---
-        function navTo(screenId, btnElement) {
-            // Ocultar todas las pantallas del main
-            document.querySelectorAll('#main-app .screen').forEach(el => el.classList.remove('active'));
-            // Mostrar la elegida
-            document.getElementById(screenId).classList.add('active');
+        function showView(viewId) {
+            document.querySelectorAll('#main-app .screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            if(viewId === 'view-tasks') renderTasks();
+            if(viewId === 'view-calendar') renderCalendar();
+            if(viewId === 'view-scores') renderScores();
+        }
+
+        // LÓGICA DE TAREAS Y REPETICIÓN
+        function saveGlobalTask() {
+            const title = document.getElementById('gt-title').value;
+            const startDate = document.getElementById('gt-date').value;
+            const isRepeat = document.getElementById('gt-repeat').checked;
+            const assignedUsers = Array.from(document.querySelectorAll('.assign-user:checked')).map(el => parseInt(el.value));
             
-            // Actualizar botones menú
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            if(btnElement) btnElement.classList.add('active');
+            if(!title || assignedUsers.length === 0) return alert("Falta título o usuarios");
 
-            if(screenId === 'view-tasks') renderTasks();
-            if(screenId === 'view-calendar') renderCalendar();
-            if(screenId === 'view-scores') renderScores();
-        }
+            let scores = {};
+            document.querySelectorAll('.sc-in').forEach(i => scores[i.dataset.cat] = parseInt(i.value) || 0);
 
-        // --- TAREAS Y PUNTUACIÓN ---
-        
-        function renderCategoriesInput() {
-            const container = document.getElementById('score-inputs');
-            container.innerHTML = '';
-            db.categories.forEach(cat => {
-                container.innerHTML += `
-                    <label>${cat} (Puntos: 0-10)</label>
-                    <input type="number" class="score-input" data-cat="${cat}" value="0" min="0" max="10">
-                `;
+            assignedUsers.forEach(uId => {
+                const user = db.users.find(u => u.id === uId);
+                const groupId = Date.now() + Math.random();
+
+                if(!isRepeat) {
+                    user.tasks.push({ id: Date.now() + Math.random(), title, date: startDate, status: 'En espera', scores, isRepeat: false });
+                } else {
+                    const selectedDays = Array.from(document.querySelectorAll('.day-opt:checked')).map(el => parseInt(el.value));
+                    createRepeatedTasks(user, title, startDate, selectedDays, scores, groupId);
+                }
             });
+
+            save();
+            alert("Tareas creadas");
+            navTo('screen-home');
         }
 
-        function addCategory() {
-            const input = document.getElementById('new-cat-input');
-            const val = input.value.trim();
-            if(val && !db.categories.includes(val)) {
-                db.categories.push(val);
-                saveData();
-                renderCategoriesInput();
-                input.value = '';
+        function createRepeatedTasks(user, title, startDateStr, days, scores, groupId) {
+            let current = startDateStr ? new Date(startDateStr) : new Date();
+            let count = 0;
+            // Generar hoy y las próximas ocurrencias hasta completar 3 eventos
+            while(count < 4) { // 4 para asegurar hoy + 3 futuros
+                if(days.includes(current.getDay())) {
+                    const dateStr = current.toISOString().split('T')[0];
+                    user.tasks.push({
+                        id: Date.now() + Math.random(),
+                        groupId: groupId,
+                        title: `${title}. ${dayNames[current.getDay()]}`,
+                        baseTitle: title,
+                        date: dateStr,
+                        status: 'En espera',
+                        scores: scores,
+                        isRepeat: true,
+                        repeatDays: days
+                    });
+                    count++;
+                }
+                current.setDate(current.getDate() + 1);
             }
-        }
-
-        function showAddTaskForm() {
-            document.getElementById('add-task-form').style.display = 'block';
-            renderCategoriesInput();
-        }
-        function hideAddTaskForm() {
-            document.getElementById('add-task-form').style.display = 'none';
-        }
-
-        function saveTask() {
-            const title = document.getElementById('t-title').value;
-            const date = document.getElementById('t-date').value;
-            const status = document.getElementById('t-status').value;
-            
-            if(!title) return alert("Pon un título a la tarea");
-
-            // Recoger puntuaciones
-            let taskScores = {};
-            document.querySelectorAll('.score-input').forEach(input => {
-                taskScores[input.dataset.cat] = parseInt(input.value) || 0;
-            });
-
-            const newTask = {
-                id: Date.now(),
-                title,
-                date,
-                status,
-                scores: taskScores
-            };
-
-            currentUser.tasks.push(newTask);
-            
-            // Actualizar el usuario dentro de la DB general
-            const userIndex = db.users.findIndex(u => u.id === currentUser.id);
-            db.users[userIndex] = currentUser;
-            saveData();
-
-            hideAddTaskForm();
-            renderTasks();
-            
-            // Limpiar form
-            document.getElementById('t-title').value = '';
-            document.getElementById('t-date').value = '';
         }
 
         function renderTasks() {
-            const list = document.getElementById('tasks-list');
-            list.innerHTML = '';
-            
-            // Ordenar: primero las más nuevas
-            const tasks = [...currentUser.tasks].reverse();
-
-            tasks.forEach(t => {
-                let statusColor = 'st-espera';
-                if(t.status === 'En proceso') statusColor = 'st-proceso';
-                if(t.status === 'Completada') statusColor = 'st-completada';
-                if(t.status === 'Terminada') statusColor = 'st-terminada';
-
-                // Formatear puntuaciones para mostrar
-                let scoresHtml = '';
-                for (const [cat, val] of Object.entries(t.scores)) {
-                    if(val > 0) scoresHtml += `<div class="score-row"><span>${cat}</span> <b>+${val}</b></div>`;
-                }
-
-                list.innerHTML += `
-                    <div class="card">
-                        <span class="status-badge ${statusColor}">${t.status}</span>
-                        <h4>${t.title}</h4>
-                        <small>${t.date ? '📅 ' + t.date : 'Sin fecha'}</small>
-                        <div style="margin-top:10px; border-top:1px dashed #eee; padding-top:5px;">
-                            ${scoresHtml}
-                        </div>
-                    </div>
-                `;
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+            // Tareas no archivadas
+            currentUser.tasks.filter(t => t.status === 'En espera' || t.status === 'En proceso').forEach(t => {
+                container.innerHTML += `
+                    <div class="card task-card st-${t.status.toLowerCase().replace(" ", "-")}" onclick="changeStatus(${t.id})">
+                        <strong>${t.title}</strong><br>
+                        <small>${t.date || 'Sin fecha'} | Estado: ${t.status}</small>
+                        ${t.isRepeat ? '<br><small>🔄 Repetitiva</small>' : ''}
+                    </div>`;
             });
+        }
+
+        function changeStatus(taskId) {
+            const t = currentUser.tasks.find(t => t.id === taskId);
+            const next = { "En espera": "En proceso", "En proceso": "Terminada", "Terminada": "Perdida", "Perdida": "En espera" };
+            t.status = next[t.status];
+            
+            if(t.status === 'Terminada' || t.status === 'Perdida') {
+                // Al archivar, si es repetitiva y cambiamos el check de repetición
+                // (En esta versión simplificada, al archivar una se mantiene la lógica de las siguientes)
+            }
+            
+            save();
+            renderTasks();
         }
 
         function renderCalendar() {
-            const list = document.getElementById('calendar-list');
-            list.innerHTML = '';
-            
-            // Filtrar tareas que tienen fecha
-            const datedTasks = currentUser.tasks.filter(t => t.date);
-            // Ordenar por fecha
-            datedTasks.sort((a,b) => new Date(a.date) - new Date(b.date));
-
-            let lastDate = '';
-            
-            datedTasks.forEach(t => {
-                if(t.date !== lastDate) {
-                    list.innerHTML += `<div class="calendar-date">${t.date}</div>`;
-                    lastDate = t.date;
-                }
-                list.innerHTML += `
-                    <div class="card" style="margin-top:5px; border-left: 4px solid var(--primary);">
-                        <div>${t.title}</div>
-                        <small>${t.status}</small>
-                    </div>
-                `;
+            const container = document.getElementById('calendar-container');
+            container.innerHTML = '';
+            const dated = currentUser.tasks.filter(t => t.date).sort((a,b) => new Date(a.date) - new Date(b.date));
+            dated.forEach(t => {
+                container.innerHTML += `
+                    <div class="card st-${t.status.toLowerCase().replace(" ", "-")}" style="border-left:4px solid">
+                        <small>${t.date}</small><br>
+                        <strong>${t.title}</strong> (${t.status})
+                    </div>`;
             });
-
-            if(datedTasks.length === 0) list.innerHTML = '<p style="text-align:center; color:#999;">No hay tareas con fecha asignada.</p>';
         }
 
         function renderScores() {
-            const list = document.getElementById('total-scores-list');
-            list.innerHTML = '';
-            
+            const container = document.getElementById('scores-container');
+            container.innerHTML = '';
             let totals = {};
-            // Inicializar contadores con todas las categorías existentes
             db.categories.forEach(c => totals[c] = 0);
 
-            // Sumar todo
             currentUser.tasks.forEach(t => {
-                for (const [cat, val] of Object.entries(t.scores)) {
-                    if(!totals[cat]) totals[cat] = 0;
-                    totals[cat] += val;
+                if(t.status === 'Terminada') {
+                    for(let cat in t.scores) totals[cat] += t.scores[cat];
                 }
             });
 
-            for (const [cat, val] of Object.entries(totals)) {
-                list.innerHTML += `
-                    <div class="score-row" style="font-size:16px; padding:10px 0;">
-                        <span>${cat}</span> <b style="color:var(--primary);">${val} pts</b>
-                    </div>
-                `;
+            for(let cat in totals) {
+                container.innerHTML += `<div class="card"><strong>${cat}:</strong> ${totals[cat]} puntos</div>`;
             }
         }
 
-        // Inicializar
-        loadData();
-
+        renderHome();
     </script>
 </body>
 </html>
