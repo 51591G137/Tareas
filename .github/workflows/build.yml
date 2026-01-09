@@ -17,26 +17,32 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm' # Esto acelera la instalación en futuras ejecuciones
 
       - name: Install Dependencies
         run: npm install
 
-      - name: Initialize Capacitor
-        run: npx cap add android
+      # CORRECCIÓN AQUÍ:
+      # 1. Intentamos construir la web (si tienes script "build").
+      # 2. Sincronizamos (copiamos cambios web -> carpeta android).
+      - name: Build Web & Sync Capacitor
+        run: |
+          npm run build --if-present
+          npx cap sync android
 
       - name: Sync version from capacitor.config.json to build.gradle
         run: |
-          # Extraer versionCode y versionName del capacitor.config.json
+          # Extraer versionCode y versionName
           VERSION_CODE=$(node -p "require('./capacitor.config.json').android.versionCode")
           VERSION_NAME=$(node -p "require('./capacitor.config.json').android.versionName")
           
           echo "Syncing version: versionCode=$VERSION_CODE, versionName=$VERSION_NAME"
           
-          # Actualizar build.gradle con los valores correctos
+          # Actualizar build.gradle
           sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/g" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION_NAME\"/g" android/app/build.gradle
           
-          # Verificar que se aplicaron los cambios
+          # Verificar cambios
           echo "Verificando build.gradle:"
           grep "versionCode" android/app/build.gradle
           grep "versionName" android/app/build.gradle
