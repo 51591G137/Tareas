@@ -104,3 +104,6 @@ function checkExpiredTasks() {
 // Verificar cada minuto
 setInterval(checkExpiredTasks, 60000);
 checkExpiredTasks();
+// Hacer db global
+window.db = db;
+window.save = save;

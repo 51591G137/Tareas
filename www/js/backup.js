@@ -60,3 +60,8 @@ function closePasteBackupModal() {
   // TODO: Cerrar modal y limpiar campos
 }
 window.closePasteBackupModal = closePasteBackupModal;
+// Hacer funciones globales
+window.exportBackup = exportBackup;
+window.showPasteBackup = showPasteBackup;
+window.processPastedBackup = processPastedBackup;
+window.closePasteBackupModal = closePasteBackupModal;

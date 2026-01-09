@@ -47,3 +47,6 @@ function dropCategory(ev) {
   // TODO: Reordenar/colocar categoría según destino
 }
 window.dropCategory = dropCategory;
+// Hacer funciones globales
+window.addCategory = addCategory;
+window.renderCategoriesList = renderCategoriesList;

@@ -316,11 +316,34 @@
     <script src="js/backup.js"></script>
     
     <script>
-        // Variable global para usuario actual
-        let currentUser = null;
-        
-        // Inicializar app
-        renderHome();
+        // Esperar a que el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar variables globales
+            window.currentUser = null;
+            window.dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+            window.monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            
+            // Asegurarse de que la base de datos esté cargada
+            if (typeof db === 'undefined') {
+                console.error('La base de datos no se cargó correctamente');
+                // Intentar cargar manualmente
+                window.db = loadDatabase();
+                window.save = function() { 
+                    db.version = 4;
+                    localStorage.setItem('eliteDB', JSON.stringify(db)); 
+                };
+            }
+            
+            // Renderizar la pantalla de inicio
+            if (typeof renderHome === 'function') {
+                renderHome();
+            } else {
+                console.error('renderHome no está definida');
+                // Mostrar un error en la pantalla
+                document.getElementById('users-list-home').innerHTML = 
+                    '<p style="color: red;">Error: la función renderHome no está disponible. Revisa la consola para más detalles.</p>';
+            }
+        });
     </script>
 </body>
 </html>

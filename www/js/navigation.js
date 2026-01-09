@@ -1,48 +1,86 @@
-'use strict';
+// navigation.js - Funciones de navegación
 
-/**
- * navigation.js
- * Funciones de navegación entre pantallas y pestañas
- */
-
-/** Navega a una vista identificada por "view" */
 function navTo(view) {
-  console.debug('[navigation] navTo', view);
-  // TODO: Implementar navegación entre vistas
+    // Ocultar todas las pantallas
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+    });
+    
+    // Mostrar la pantalla solicitada
+    if (view === 'screen-home') {
+        document.getElementById('screen-home').classList.add('active');
+        document.getElementById('main-app').style.display = 'none';
+        renderHome();
+    } else if (view === 'screen-settings') {
+        document.getElementById('screen-settings').classList.add('active');
+        renderSettings();
+    } else if (view === 'main-app') {
+        document.getElementById('main-app').style.display = 'block';
+        showView('view-tasks');
+    }
 }
-window.navTo = navTo;
 
-/** Muestra la pestaña de configuración */
-function showConfigTab() {
-  console.debug('[navigation] showConfigTab');
-  // TODO: Mostrar la vista de configuración
+function showConfigTab(tabId) {
+    // Ocultar todos los contenidos de pestañas
+    document.querySelectorAll('.config-tab-content').forEach(tab => {
+        tab.style.display = 'none';
+    });
+    
+    // Quitar active de todas las pestañas
+    document.querySelectorAll('.config-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Mostrar la pestaña seleccionada y activarla
+    document.getElementById(tabId).style.display = 'block';
+    document.querySelector(`[onclick="showConfigTab('${tabId}')"]`).classList.add('active');
+    
+    // Renderizar contenido específico de la pestaña
+    if (tabId === 'tab-users') {
+        renderUsersTab();
+    } else if (tabId === 'tab-tasks') {
+        renderTasksTab();
+    } else if (tabId === 'tab-badges') {
+        renderBadgesTab();
+    }
 }
-window.showConfigTab = showConfigTab;
 
-/** Renderiza la vista principal (home) */
 function renderHome() {
-  console.debug('[navigation] renderHome');
-  // TODO: Renderizar contenido de inicio
+    const container = document.getElementById('users-list-home');
+    container.innerHTML = '';
+    
+    db.users.forEach(user => {
+        const userDiv = document.createElement('div');
+        userDiv.className = 'user-card';
+        userDiv.innerHTML = `
+            <div style="font-size: 24px;">👤</div>
+            <div style="font-weight: bold; margin-top: 5px;">${user.name}</div>
+        `;
+        userDiv.onclick = () => {
+            currentUser = user;
+            navTo('main-app');
+        };
+        container.appendChild(userDiv);
+    });
 }
-window.renderHome = renderHome;
 
-/** Renderiza la vista de ajustes */
 function renderSettings() {
-  console.debug('[navigation] renderSettings');
-  // TODO: Renderizar ajustes
+    // Inicializar todas las pestañas de configuración
+    renderUsersTab();
+    renderCategoriesList();
+    renderGlobalTasks();
+    renderBadgesList();
+    loadUserScoresSelector();
 }
-window.renderSettings = renderSettings;
 
-/** Maneja el login */
-function login(credentials) {
-  console.debug('[navigation] login', credentials);
-  // TODO: Validar credenciales, establecer sesión
-}
-window.login = login;
-
-/** Maneja el logout */
 function logout() {
-  console.debug('[navigation] logout');
-  // TODO: Cerrar sesión, limpiar estado
+    currentUser = null;
+    navTo('screen-home');
 }
+
+// Hacer funciones globales
+window.navTo = navTo;
+window.showConfigTab = showConfigTab;
+window.renderHome = renderHome;
+window.renderSettings = renderSettings;
 window.logout = logout;
