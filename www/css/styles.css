@@ -1,237 +1,537 @@
-:root { 
-    --primary: #4a90e2; 
-    --bg: #f0f2f5; 
-    --card: #ffffff; 
-    --danger: #ff4d4d; 
+/* styles.css - Academia de Héroes */
+
+:root {
+    --primary: #4a90e2;
     --success: #2ecc71;
+    --danger: #e74c3c;
     --warning: #f39c12;
     --info: #3498db;
+    --dark: #2c3e50;
+    --light: #ecf0f1;
 }
 
-body { 
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-    background: var(--bg); 
-    margin: 0; 
-    padding-bottom: 70px; 
-}
-
-.screen { 
-    display: none; 
-    padding: 20px; 
-    animation: fadeIn 0.3s; 
-}
-.screen.active { display: block; }
-
-@keyframes fadeIn { 
-    from { opacity: 0; } 
-    to { opacity: 1; } 
-}
-
-/* Cards */
-.card { 
-    background: var(--card); 
-    padding: 15px; 
-    margin-bottom: 15px; 
-    border-radius: 12px; 
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
-}
-
-/* Buttons */
-button { 
-    background: var(--primary); 
-    color: white; 
-    border: none; 
-    padding: 12px; 
-    border-radius: 8px; 
-    font-weight: bold; 
-    width: 100%; 
-    cursor: pointer; 
-    margin-top: 5px;
-}
-button.secondary { background: #95a5a6; color: #fff; }
-button.danger { background: var(--danger); }
-button.small { width: auto; padding: 8px 12px; font-size: 12px; }
-
-/* Inputs */
-input, select, textarea { 
-    width: 100%; 
-    padding: 10px; 
-    margin: 5px 0; 
-    border: 1px solid #ddd; 
-    border-radius: 8px; 
-    box-sizing: border-box; 
-}
-
-/* User Items */
-.user-item { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    padding: 15px; 
-    background: white; 
-    margin-bottom: 10px; 
-    border-radius: 12px; 
-    border: 1px solid #eee;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.user-item:hover { 
-    transform: translateY(-2px); 
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
-}
-
-/* Settings Button */
-.settings-btn { 
-    font-size: 50px; 
-    background: none; 
-    border: none; 
-    color: #888; 
-    cursor: pointer; 
-    display: block; 
-    margin: 30px auto; 
-    width: auto;
-    transition: transform 0.3s;
-}
-.settings-btn:hover { transform: rotate(90deg); }
-
-/* Task Cards */
-.task-card { 
-    border-left: 5px solid #ccc; 
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-}
-.task-card:hover { 
-    transform: translateY(-2px); 
-    box-shadow: 0 6px 12px rgba(0,0,0,0.1); 
-}
-.st-espera { border-left-color: var(--warning); }
-.st-proceso { border-left-color: var(--info); }
-.st-terminada { border-left-color: var(--success); }
-.st-perdida { border-left-color: var(--danger); opacity: 0.7; }
-
-/* Status Indicators */
-.status-indicator {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: bold;
-    margin-bottom: 8px;
-}
-.status-espera { background: var(--warning); color: #fff; }
-.status-proceso { background: var(--info); color: #fff; }
-.status-terminada { background: var(--success); color: #fff; }
-.status-perdida { background: var(--danger); color: #fff; }
-
-/* Task Scores */
-.task-scores {
-    font-size: 11px;
-    color: #666;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px dashed #ddd;
-}
-.task-scores span {
-    display: inline-block;
-    margin-right: 10px;
-    background: #f0f0f0;
-    padding: 2px 6px;
-    border-radius: 4px;
-}
-
-/* Days Selector */
-.days-selector { 
-    display: flex; 
-    justify-content: space-between; 
-    margin: 10px 0; 
-    flex-wrap: wrap;
-    gap: 5px;
-}
-.day-check { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    font-size: 10px;
-    padding: 5px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    flex: 1;
-    min-width: 40px;
-}
-
-/* User Checkbox List */
-.user-checkbox-list { 
-    max-height: 150px; 
-    overflow-y: auto; 
-    border: 1px solid #ddd; 
-    padding: 10px; 
-    border-radius: 5px; 
-    margin: 10px 0;
-}
-.user-checkbox-list label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 5px 0;
-}
-.user-checkbox-list input[type="checkbox"] {
-    width: auto;
+* {
     margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/* Navigation Bottom */
-.nav-bottom { 
-    position: fixed; 
-    bottom: 0; 
-    width: 100%; 
-    background: #fff; 
-    display: flex; 
-    border-top: 1px solid #ddd; 
-    height: 60px; 
-    z-index: 100;
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
 }
-.nav-btn { 
-    flex: 1; 
-    border: none; 
-    background: none; 
-    font-size: 12px; 
-    color: #999; 
+
+/* Pantallas principales */
+.screen {
+    display: none;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* Tarjetas */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Inputs y formularios */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* Botones */
+button {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
-}
-.nav-btn.active { 
-    color: var(--primary); 
-    font-weight: bold; 
+    transition: all 0.3s;
+    margin: 5px 0;
 }
 
-/* Config Tabs - CORREGIDO */
+button:active {
+    transform: scale(0.98);
+}
+
+button.small {
+    width: auto;
+    padding: 8px 15px;
+    font-size: 13px;
+}
+
+button.secondary {
+    background: #95a5a6;
+}
+
+button.danger {
+    background: var(--danger);
+}
+
+button.settings-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--dark);
+    font-size: 24px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Items de usuario/héroe */
+.user-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 4px solid var(--primary);
+}
+
+.user-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Tabs de configuración */
 .config-tabs {
     display: flex;
     gap: 5px;
     margin-bottom: 20px;
-    border-bottom: 2px solid #ddd;
     overflow-x: auto;
+    padding-bottom: 5px;
 }
+
 .config-tab {
-    padding: 10px 15px;
+    flex: 1;
+    min-width: 100px;
+    padding: 10px;
     background: #e0e0e0;
-    border: none;
+    color: #666;
     border-radius: 8px 8px 0 0;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: normal;
-    white-space: nowrap;
-    width: auto;
-    margin-top: 0;
-    color: #333; /* Texto oscuro por defecto */
+    font-size: 13px;
 }
+
 .config-tab.active {
-    background: var(--primary);
-    color: white; /* Texto blanco cuando está activo */
+    background: white;
+    color: var(--primary);
     font-weight: bold;
 }
 
-/* Modal */
+/* Lista de checkboxes */
+.user-checkbox-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-checkbox-list label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+/* Selector de días */
+.days-selector {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.day-check {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    cursor: pointer;
+    min-width: 50px;
+}
+
+.day-check input {
+    width: auto;
+    margin-top: 5px;
+}
+
+/* Cards de misión */
+.mission-card {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 4px solid #ddd;
+}
+
+.mission-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.mission-card.st-espera {
+    border-left-color: #95a5a6;
+}
+
+.mission-card.st-proceso {
+    border-left-color: var(--info);
+}
+
+.mission-card.st-unavailable {
+    border-left-color: #bdc3c7;
+    opacity: 0.6;
+}
+
+.status-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.status-espera {
+    background: #ecf0f1;
+    color: #7f8c8d;
+}
+
+.status-proceso {
+    background: #d6eaf8;
+    color: #2980b9;
+}
+
+.status-terminada {
+    background: #d5f4e6;
+    color: #27ae60;
+}
+
+.status-perdida {
+    background: #fadbd8;
+    color: #c0392b;
+}
+
+.status-unavailable {
+    background: #e8e8e8;
+    color: #999;
+}
+
+/* Sección de tipo de misión */
+.mission-type-section {
+    margin-bottom: 20px;
+}
+
+.mission-type-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #5a67d8 100%);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.mission-type-icon {
+    font-size: 24px;
+}
+
+.mission-count {
+    margin-left: auto;
+    background: rgba(255,255,255,0.3);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+}
+
+/* Recompensas de misión */
+.mission-rewards {
+    margin-top: 10px;
+}
+
+.reward-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.reward-chip {
+    background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Galería de poderes */
+.power-section {
+    margin-bottom: 25px;
+}
+
+.power-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.power-total-points {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.powers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.power-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.power-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.power-name {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.power-level {
+    color: var(--primary);
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.power-progress {
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    width: 8px;
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 2px;
+}
+
+.progress-bar.filled {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.power-points {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Logros */
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+}
+
+.badge-item {
+    text-align: center;
+    padding: 15px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.badge-image {
+    font-size: 48px;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+}
+
+.badge-image.locked {
+    filter: grayscale(100%);
+    opacity: 0.4;
+}
+
+.badge-image.unlocked {
+    animation: bounce 0.5s;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+.badge-name {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.badge-progress {
+    font-size: 11px;
+    color: #666;
+}
+
+/* Diario del héroe */
+.diary-day {
+    margin-bottom: 25px;
+}
+
+.diary-date {
+    background: var(--primary);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.diary-missions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.diary-mission-card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    border-left: 4px solid #ddd;
+}
+
+.diary-mission-card.st-terminada {
+    border-left-color: var(--success);
+}
+
+.diary-mission-card.st-perdida {
+    border-left-color: var(--danger);
+}
+
+.diary-mission-card.st-proceso {
+    border-left-color: var(--info);
+}
+
+.diary-mission-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.diary-status-icon {
+    font-size: 20px;
+}
+
+.diary-time {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.diary-description {
+    font-size: 13px;
+    color: #666;
+    margin: 8px 0;
+}
+
+.diary-mission-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+.diary-status {
+    font-weight: bold;
+}
+
+.diary-repeat {
+    color: var(--primary);
+}
+
+/* Navegación inferior */
+.nav-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    display: flex;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.nav-btn {
+    flex: 1;
+    padding: 12px 5px;
+    background: white;
+    color: #999;
+    border: none;
+    border-radius: 0;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.nav-btn.active {
+    color: var(--primary);
+    background: #f0f7ff;
+}
+
+/* Modales */
 .modal {
     display: none;
     position: fixed;
@@ -241,237 +541,117 @@ input, select, textarea {
     height: 100%;
     background: rgba(0,0,0,0.5);
     z-index: 1000;
+    overflow-y: auto;
+}
+
+.modal.active {
+    display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    box-sizing: border-box;
 }
-.modal.active { display: flex; }
+
 .modal-content {
     background: white;
-    padding: 20px;
-    border-radius: 12px;
-    max-width: 95%;
-    width: 400px;
-    max-height: 80%;
+    border-radius: 15px;
+    padding: 25px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
     overflow-y: auto;
-    box-sizing: border-box;
 }
+
 .modal-buttons {
     display: flex;
+    flex-direction: column;
     gap: 10px;
-    margin-top: 15px;
-}
-.modal-buttons button {
-    flex: 1;
+    margin-top: 20px;
 }
 
-/* Task Actions */
-.task-actions {
-    display: flex;
-    gap: 5px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-}
-.task-actions button {
-    flex: 1;
-    min-width: 80px;
-    font-size: 11px;
-    padding: 8px;
-}
-
-/* Admin Task Card */
-.admin-task-card {
+.reward-item {
     background: #f8f9fa;
-    border: 1px solid #dee2e6;
-}
-
-/* Edit Task Button */
-.edit-task-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 8px 10px;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Badges */
-.badge-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 15px;
-    margin-top: 15px;
-}
-.badge-item {
-    text-align: center;
     padding: 10px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--success);
 }
-.badge-image {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    margin: 0 auto 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 40px;
-    background: #f0f0f0;
-}
-.badge-image.locked {
-    filter: grayscale(100%);
-    opacity: 0.5;
-}
-.badge-image.unlocked {
-    filter: grayscale(0%);
-    opacity: 1;
-}
-.badge-name {
-    font-size: 12px;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-.badge-progress {
-    font-size: 10px;
-    color: #666;
-}
+
+/* Items de configuración */
 .badge-config-item {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px;
+    padding: 12px;
     background: #f8f9fa;
     border-radius: 8px;
     margin-bottom: 10px;
 }
+
 .badge-emoji-display {
-    font-size: 40px;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
-    border-radius: 8px;
+    font-size: 32px;
 }
 
-/* Categories */
-.category-item {
+.admin-mission-card,
+.admin-task-card {
+    position: relative;
+    padding-right: 70px;
+}
+
+.edit-mission-btn,
+.edit-task-btn {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--info);
+    color: white;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.mission-type-item {
     display: flex;
+    gap: 8px;
     align-items: center;
-    gap: 10px;
-    padding: 10px;
-    background: #f8f9fa;
-    border-radius: 8px;
     margin-bottom: 10px;
 }
-.category-item input {
-    flex: 1;
-    margin: 0;
-}
-.drag-handle {
-    cursor: move;
-    font-size: 20px;
-    color: #999;
-}
 
-/* Calendar - NUEVO: Secciones colapsables */
-.calendar-section {
+.superpower-card {
     margin-bottom: 20px;
 }
 
-.calendar-section-header {
-    background: var(--primary);
-    color: white;
-    padding: 12px 15px;
+.powers-list {
+    margin-left: 20px;
+}
+
+.superpower-score-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
     border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: bold;
-    margin-bottom: 10px;
-    user-select: none;
 }
 
-.calendar-section-header:hover {
-    background: #3a7bc8;
+.power-score-input {
+    width: 80px !important;
+    display: inline-block;
+    margin-left: 10px;
 }
 
-.calendar-section-header .toggle-icon {
-    font-size: 18px;
-    transition: transform 0.3s;
+.power-score-section {
+    margin-bottom: 20px;
 }
 
-.calendar-section-header.collapsed .toggle-icon {
-    transform: rotate(-90deg);
-}
-
-.calendar-section-content {
-    max-height: 2000px;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
-}
-
-.calendar-section-content.collapsed {
-    max-height: 0;
-}
-
-.calendar-month-header {
-    background: #e3f2fd;
-    color: #1976d2;
-    padding: 10px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: bold;
-    margin: 10px 0;
-    user-select: none;
-}
-
-.calendar-month-header:hover {
-    background: #bbdefb;
-}
-
-.calendar-month-content {
-    max-height: 2000px;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
-}
-
-.calendar-month-content.collapsed {
-    max-height: 0;
-}
-
-.calendar-day-header {
-    color: var(--primary); 
-    margin-top: 15px; 
-    margin-bottom: 10px;
-    border-bottom: 2px solid var(--primary); 
-    padding-bottom: 5px;
-    font-size: 16px;
-    font-weight: bold;
-}
-
-/* Estilos responsive para calendario */
+/* Responsivo */
 @media (max-width: 600px) {
-    .calendar-section-header,
-    .calendar-month-header {
-        font-size: 14px;
-        padding: 10px 12px;
+    .powers-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+    
+    .badges-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
 }

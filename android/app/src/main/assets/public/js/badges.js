@@ -1,4 +1,4 @@
-// badges.js - Gestión de logros
+// badges.js - Gestión de insignias
 
 function toggleBadgeRequirements() {
     const type = document.getElementById('badge-req-type').value;
@@ -64,7 +64,7 @@ function renderBadgesList() {
     container.innerHTML = '';
     
     if(db.badges.length === 0) {
-        container.innerHTML = '<p style="color:#999; font-size:12px;">No hay logros creados</p>';
+        container.innerHTML = '<p style="color:#999; font-size:12px;">No hay insignias creadas</p>';
         return;
     }
     
@@ -94,18 +94,16 @@ function renderBadgesList() {
 }
 
 function renderBadgesTab() {
-    // Selector de superpoder para requisito de categoría
     const badgeCatSelect = document.getElementById('badge-category');
     badgeCatSelect.innerHTML = '';
-    db.superpowers.forEach(sp => {
-        badgeCatSelect.innerHTML += `<option value="${sp.name}">${sp.name}</option>`;
+    db.categories.forEach(cat => {
+        badgeCatSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
     });
 
-    // Inputs para requisitos múltiples
     const multiScores = document.getElementById('badge-multiple-scores');
     multiScores.innerHTML = '';
-    db.superpowers.forEach(sp => {
-        multiScores.innerHTML += `<label>${sp.name} <input type="number" class="badge-multi-score" data-cat="${sp.name}" value="0" min="0"></label>`;
+    db.categories.forEach(cat => {
+        multiScores.innerHTML += `<label>${cat} <input type="number" class="badge-multi-score" data-cat="${cat}" value="0" min="0"></label>`;
     });
 
     renderBadgesList();
@@ -124,15 +122,15 @@ function openEditBadgeModal(badgeId) {
     
     const catSelect = document.getElementById('edit-badge-category');
     catSelect.innerHTML = '';
-    db.superpowers.forEach(sp => {
-        catSelect.innerHTML += `<option value="${sp.name}">${sp.name}</option>`;
+    db.categories.forEach(cat => {
+        catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
     });
     
     const multiScores = document.getElementById('edit-badge-multiple-scores');
     multiScores.innerHTML = '';
-    db.superpowers.forEach(sp => {
-        const val = badge.multipleRequirements ? (badge.multipleRequirements[sp.name] || 0) : 0;
-        multiScores.innerHTML += `<label>${sp.name} <input type="number" class="edit-badge-multi-score" data-cat="${sp.name}" value="${val}" min="0"></label>`;
+    db.categories.forEach(cat => {
+        const val = badge.multipleRequirements ? (badge.multipleRequirements[cat] || 0) : 0;
+        multiScores.innerHTML += `<label>${cat} <input type="number" class="edit-badge-multi-score" data-cat="${cat}" value="${val}" min="0"></label>`;
     });
     
     if(badge.requirementType === 'total') {
@@ -189,7 +187,7 @@ function saveEditedBadge() {
 }
 
 function deleteBadge(badgeId) {
-    if(!confirm('¿Eliminar este logro?')) return;
+    if(!confirm('¿Eliminar esta insignia?')) return;
     db.badges = db.badges.filter(b => b.id !== badgeId);
     save();
     renderBadgesList();

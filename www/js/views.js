@@ -1,5 +1,6 @@
 // views.js - Renderizado de vistas del usuario
 const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const dayNamesShort = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 function showView(viewId) {
@@ -9,309 +10,321 @@ function showView(viewId) {
     document.getElementById(viewId).classList.add('active');
     
     const titles = {
-        'view-tasks': 'Tareas de ' + currentUser.name,
-        'view-calendar': 'Calendario de ' + currentUser.name,
-        'view-scores': 'Puntuación de ' + currentUser.name,
-        'view-badges': 'Insignias de ' + currentUser.name
+        'view-missions': 'Radar de Misiones - ' + currentUser.name,
+        'view-powers': 'Galería de Poderes - ' + currentUser.name,
+        'view-achievements': 'Logros - ' + currentUser.name,
+        'view-diary': 'Diario del Héroe - ' + currentUser.name
     };
     document.getElementById('user-title').innerText = titles[viewId] || currentUser.name;
     
-    const btnIndex = ['view-tasks', 'view-calendar', 'view-scores', 'view-badges'].indexOf(viewId);
+    const btnIndex = ['view-missions', 'view-powers', 'view-achievements', 'view-diary'].indexOf(viewId);
     if(btnIndex >= 0) {
         document.querySelectorAll('.nav-btn')[btnIndex].classList.add('active');
     }
 
-    if(viewId === 'view-tasks') renderTasks();
-    if(viewId === 'view-calendar') renderCalendar();
-    if(viewId === 'view-scores') renderScores();
-    if(viewId === 'view-badges') renderBadges();
+    if(viewId === 'view-missions') renderMissions();
+    if(viewId === 'view-powers') renderPowers();
+    if(viewId === 'view-achievements') renderAchievements();
+    if(viewId === 'view-diary') renderDiary();
 }
 
-function renderTasks() {
-    const container = document.getElementById('tasks-container');
+// ========================================
+// RADAR DE MISIONES
+// ========================================
+
+function renderMissions() {
+    const container = document.getElementById('missions-container');
     container.innerHTML = '';
     
-    const activeTasks = currentUser.tasks.filter(t => 
-        t.status === 'En espera' || t.status === 'En proceso'
-    );
-    
-    if(activeTasks.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px;">No tienes tareas pendientes 🎉</p>';
+    if(!currentUser.missions || currentUser.missions.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px;">No tienes misiones asignadas aún 🎯</p>';
         return;
     }
     
-    activeTasks.forEach(t => {
-        let statusClass = 'espera';
-        if(t.status === 'En proceso') statusClass = 'proceso';
-        
-        let scoresHtml = '<div class="task-scores">';
-        for(let cat in t.scores) {
-            if(t.scores[cat] > 0) {
-                scoresHtml += `<span>${cat}: +${t.scores[cat]}</span>`;
-            }
-        }
-        scoresHtml += '</div>';
-        
-        container.innerHTML += `
-            <div class="card task-card st-${statusClass}" onclick="openStatusModal(${t.id})">
-                <span class="status-indicator status-${statusClass}">${t.status}</span>
-                <h4 style="margin: 5px 0;">${t.title}</h4>
-                <small>📅 ${t.date || 'Sin fecha'}</small>
-                ${t.isRepeat ? '<br><small style="color: var(--primary);">🔄 Repetitiva</small>' : ''}
-                ${scoresHtml}
-            </div>
-        `;
-    });
-}
-
-function renderCalendar() {
-    const container = document.getElementById('calendar-container');
-    container.innerHTML = '';
-    
-    const datedTasks = currentUser.tasks
-        .filter(t => t.date)
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    if(datedTasks.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px;">No hay tareas con fecha asignada</p>';
-        return;
-    }
-    
-    // Agrupar tareas por períodos
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
-    
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    
-    const pastTasks = [];
-    const thisWeekTasks = [];
-    const futureTasks = [];
-    
-    datedTasks.forEach(t => {
-        const taskDate = new Date(t.date + 'T00:00:00');
-        if(taskDate < startOfWeek) {
-            pastTasks.push(t);
-        } else if(taskDate <= endOfWeek) {
-            thisWeekTasks.push(t);
-        } else {
-            futureTasks.push(t);
-        }
+    // Agrupar misiones por tipo
+    const missionsByType = {};
+    db.missionTypes.forEach(type => {
+        missionsByType[type.id] = [];
     });
     
-    // PASADAS (contraídas por defecto)
-    if(pastTasks.length > 0) {
-        const pastSection = createCalendarSection('Antiguas', pastTasks, true, true);
-        container.appendChild(pastSection);
-    }
+    // Filtrar misiones disponibles (no terminadas ni perdidas)
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const currentTime = now.getHours() * 60 + now.getMinutes();
     
-    // ESTA SEMANA (expandidas)
-    if(thisWeekTasks.length > 0) {
-        const weekSection = createCalendarSection('Esta Semana', thisWeekTasks, false, false);
-        container.appendChild(weekSection);
-    }
-    
-    // FUTURAS (contraídas)
-    if(futureTasks.length > 0) {
-        const futureSection = createCalendarSection('Siguientes', futureTasks, true, true);
-        container.appendChild(futureSection);
-    }
-}
-
-function createCalendarSection(title, tasks, collapsed, groupByMonth) {
-    const section = document.createElement('div');
-    section.className = 'calendar-section';
-    
-    const header = document.createElement('div');
-    header.className = 'calendar-section-header' + (collapsed ? ' collapsed' : '');
-    header.innerHTML = `
-        <span>${title} (${tasks.length})</span>
-        <span class="toggle-icon">▼</span>
-    `;
-    header.onclick = function() {
-        this.classList.toggle('collapsed');
-        content.classList.toggle('collapsed');
-    };
-    
-    const content = document.createElement('div');
-    content.className = 'calendar-section-content' + (collapsed ? ' collapsed' : '');
-    
-    if(groupByMonth) {
-        // Agrupar por mes
-        const tasksByMonth = {};
-        tasks.forEach(t => {
-            const date = new Date(t.date + 'T00:00:00');
-            const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-            if(!tasksByMonth[monthKey]) {
-                tasksByMonth[monthKey] = {
-                    year: date.getFullYear(),
-                    month: date.getMonth(),
-                    tasks: []
-                };
-            }
-            tasksByMonth[monthKey].tasks.push(t);
-        });
+    currentUser.missions.forEach(mission => {
+        if(mission.status === 'Terminada' || mission.status === 'Perdida') return;
         
-        // Renderizar cada mes
-        Object.keys(tasksByMonth).sort().forEach(monthKey => {
-            const monthData = tasksByMonth[monthKey];
-            const monthDiv = createMonthGroup(
-                monthNames[monthData.month] + ' ' + monthData.year,
-                monthData.tasks,
-                true
-            );
-            content.appendChild(monthDiv);
-        });
-    } else {
-        // Renderizar día por día
-        let lastDate = '';
-        tasks.forEach(t => {
-            if(t.date !== lastDate) {
-                const dateObj = new Date(t.date + 'T00:00:00');
-                const dayName = dayNames[dateObj.getDay()];
-                const dayHeader = document.createElement('h4');
-                dayHeader.className = 'calendar-day-header';
-                dayHeader.innerText = `${t.date} - ${dayName}`;
-                content.appendChild(dayHeader);
-                lastDate = t.date;
-            }
+        // Verificar si la misión está en su rango de fechas
+        const startDate = mission.startDate || mission.date;
+        const endDate = mission.endDate || mission.date;
+        
+        if(startDate && todayStr < startDate) return; // No ha empezado
+        if(endDate && todayStr > endDate) return; // Ya terminó
+        
+        // Verificar si la misión está en su rango horario
+        if(mission.timeStart && mission.timeEnd) {
+            const [startH, startM] = mission.timeStart.split(':').map(Number);
+            const [endH, endM] = mission.timeEnd.split(':').map(Number);
+            const startTime = startH * 60 + startM;
+            const endTime = endH * 60 + endM;
             
-            const taskCard = createTaskCard(t);
-            content.appendChild(taskCard);
-        });
-    }
-    
-    section.appendChild(header);
-    section.appendChild(content);
-    return section;
-}
-
-function createMonthGroup(title, tasks, collapsed) {
-    const monthDiv = document.createElement('div');
-    monthDiv.style.marginBottom = '15px';
-    
-    const header = document.createElement('div');
-    header.className = 'calendar-month-header' + (collapsed ? ' collapsed' : '');
-    header.innerHTML = `
-        <span>${title} (${tasks.length})</span>
-        <span class="toggle-icon" style="font-size: 14px;">▼</span>
-    `;
-    
-    const content = document.createElement('div');
-    content.className = 'calendar-month-content' + (collapsed ? ' collapsed' : '');
-    
-    header.onclick = function() {
-        this.classList.toggle('collapsed');
-        content.classList.toggle('collapsed');
-    };
-    
-    let lastDate = '';
-    tasks.forEach(t => {
-        if(t.date !== lastDate) {
-            const dateObj = new Date(t.date + 'T00:00:00');
-            const dayName = dayNames[dateObj.getDay()];
-            const dayHeader = document.createElement('h4');
-            dayHeader.className = 'calendar-day-header';
-            dayHeader.innerText = `${t.date} - ${dayName}`;
-            content.appendChild(dayHeader);
-            lastDate = t.date;
+            if(currentTime < startTime || currentTime > endTime) {
+                mission.temporarilyUnavailable = true;
+            } else {
+                mission.temporarilyUnavailable = false;
+            }
         }
         
-        const taskCard = createTaskCard(t);
-        content.appendChild(taskCard);
+        const type = mission.type || 'special';
+        if(missionsByType[type]) {
+            missionsByType[type].push(mission);
+        }
     });
     
-    monthDiv.appendChild(header);
-    monthDiv.appendChild(content);
-    return monthDiv;
+    // Renderizar cada grupo de misiones
+    db.missionTypes.forEach(type => {
+        const missions = missionsByType[type.id];
+        if(missions.length === 0) return;
+        
+        const section = document.createElement('div');
+        section.className = 'mission-type-section';
+        
+        section.innerHTML = `
+            <h3 class="mission-type-header">
+                <span class="mission-type-icon">${type.icon}</span>
+                ${type.name}
+                <span class="mission-count">(${missions.length})</span>
+            </h3>
+            <div class="mission-type-content"></div>
+        `;
+        
+        const content = section.querySelector('.mission-type-content');
+        
+        missions.forEach(mission => {
+            const card = createMissionCard(mission);
+            content.appendChild(card);
+        });
+        
+        container.appendChild(section);
+    });
 }
 
-function createTaskCard(task) {
+function createMissionCard(mission) {
     const card = document.createElement('div');
     
     let statusClass = 'espera';
-    if(task.status === 'En proceso') statusClass = 'proceso';
-    if(task.status === 'Terminada') statusClass = 'terminada';
-    if(task.status === 'Perdida') statusClass = 'perdida';
+    if(mission.status === 'En proceso') statusClass = 'proceso';
+    if(mission.temporarilyUnavailable) statusClass = 'unavailable';
     
-    card.className = `card st-${statusClass}`;
-    card.style.borderLeft = '4px solid';
+    card.className = `card mission-card st-${statusClass}`;
+    card.onclick = () => openMissionModal(mission.id);
+    
+    let timeInfo = '';
+    if(mission.timeStart && mission.timeEnd) {
+        timeInfo = `<small>🕐 ${mission.timeStart} - ${mission.timeEnd}</small><br>`;
+    }
+    
+    let dateInfo = '';
+    if(mission.startDate && mission.endDate) {
+        if(mission.startDate === mission.endDate) {
+            dateInfo = `<small>📅 ${mission.startDate}</small><br>`;
+        } else {
+            dateInfo = `<small>📅 ${mission.startDate} a ${mission.endDate}</small><br>`;
+        }
+    } else if(mission.date) {
+        dateInfo = `<small>📅 ${mission.date}</small><br>`;
+    }
+    
+    let statusText = mission.status;
+    if(mission.temporarilyUnavailable) {
+        statusText = 'Fuera de horario ⏰';
+    }
+    
     card.innerHTML = `
-        <span class="status-indicator status-${statusClass}">${task.status}</span>
-        <strong>${task.title}</strong>
+        <span class="status-indicator status-${statusClass}">${statusText}</span>
+        <h4 style="margin: 5px 0;">${mission.title}</h4>
+        ${dateInfo}
+        ${timeInfo}
+        ${mission.isRepeat ? '<small style="color: var(--primary);">🔄 Repetitiva</small><br>' : ''}
+        ${mission.description ? `<p style="font-size: 12px; color: #666; margin-top: 5px;">${mission.description}</p>` : ''}
+        <div class="mission-rewards">
+            ${renderMissionRewards(mission)}
+        </div>
     `;
     
     return card;
 }
 
-function renderScores() {
-    const container = document.getElementById('scores-container');
-    container.innerHTML = '';
+function renderMissionRewards(mission) {
+    let html = '<div class="reward-chips">';
     
-    let totals = {};
-    db.categories.forEach(c => totals[c] = 0);
-
-    currentUser.tasks.forEach(t => {
-        if(t.status === 'Terminada') {
-            for(let cat in t.scores) {
-                if(!totals[cat]) totals[cat] = 0;
-                totals[cat] += t.scores[cat];
+    for(let superpower in mission.scores) {
+        for(let power in mission.scores[superpower]) {
+            const points = mission.scores[superpower][power];
+            if(points > 0) {
+                html += `<span class="reward-chip">💎 ${power}: +${points}</span>`;
             }
         }
+    }
+    
+    html += '</div>';
+    return html;
+}
+
+// ========================================
+// GALERÍA DE PODERES
+// ========================================
+
+function renderPowers() {
+    const container = document.getElementById('powers-container');
+    container.innerHTML = '';
+    
+    // Calcular puntuaciones totales
+    let userScores = {};
+    db.superpowers.forEach(sp => {
+        userScores[sp.name] = {};
+        sp.powers.forEach(p => {
+            userScores[sp.name][p] = 0;
+        });
     });
 
-    if(currentUser.customScores) {
-        for(let cat in currentUser.customScores) {
-            if(!totals[cat]) totals[cat] = 0;
-            totals[cat] += currentUser.customScores[cat];
+    // Sumar puntos de misiones completadas
+    if(currentUser.missions) {
+        currentUser.missions.forEach(mission => {
+            if(mission.status === 'Terminada') {
+                for(let sp in mission.scores) {
+                    for(let power in mission.scores[sp]) {
+                        if(!userScores[sp]) userScores[sp] = {};
+                        if(!userScores[sp][power]) userScores[sp][power] = 0;
+                        userScores[sp][power] += mission.scores[sp][power];
+                    }
+                }
+            }
+        });
+    }
+
+    // Sumar puntos manuales
+    if(currentUser.powerScores) {
+        for(let sp in currentUser.powerScores) {
+            for(let power in currentUser.powerScores[sp]) {
+                if(!userScores[sp]) userScores[sp] = {};
+                if(!userScores[sp][power]) userScores[sp][power] = 0;
+                userScores[sp][power] += currentUser.powerScores[sp][power];
+            }
         }
     }
 
-    for(let cat in totals) {
-        container.innerHTML += `
-            <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="font-size: 18px;">${cat}</strong> 
-                <span style="font-size: 24px; color: var(--success); font-weight: bold;">${totals[cat]}</span>
+    // Renderizar cada superpoder
+    db.superpowers.forEach(superpower => {
+        const section = document.createElement('div');
+        section.className = 'power-section';
+        
+        // Calcular total del superpoder
+        let totalSuperpower = 0;
+        superpower.powers.forEach(power => {
+            totalSuperpower += userScores[superpower.name][power] || 0;
+        });
+        
+        section.innerHTML = `
+            <div class="power-header">
+                <h3>${superpower.name}</h3>
+                <div class="power-total">Total: <span class="power-total-points">${totalSuperpower}</span> pts</div>
             </div>
+            <div class="powers-grid"></div>
         `;
-    }
+        
+        const grid = section.querySelector('.powers-grid');
+        
+        superpower.powers.forEach(power => {
+            const points = userScores[superpower.name][power] || 0;
+            const level = Math.floor(points / 10);
+            const maxLevel = 10;
+            const currentLevel = Math.min(level, maxLevel);
+            
+            const powerCard = document.createElement('div');
+            powerCard.className = 'power-card';
+            
+            // Crear barra de progreso
+            let progressBars = '';
+            for(let i = 0; i < maxLevel; i++) {
+                const filled = i < currentLevel ? 'filled' : '';
+                progressBars += `<span class="progress-bar ${filled}"></span>`;
+            }
+            
+            powerCard.innerHTML = `
+                <div class="power-icon">⚡</div>
+                <div class="power-name">${power}</div>
+                <div class="power-level">Nivel ${currentLevel}</div>
+                <div class="power-progress">
+                    ${progressBars}
+                </div>
+                <div class="power-points">${points} pts</div>
+            `;
+            
+            grid.appendChild(powerCard);
+        });
+        
+        container.appendChild(section);
+    });
 }
 
-function renderBadges() {
-    const container = document.getElementById('badges-container');
+// ========================================
+// LOGROS Y RECONOCIMIENTOS
+// ========================================
+
+function renderAchievements() {
+    const container = document.getElementById('achievements-container');
     container.innerHTML = '';
     
     if(db.badges.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px;">No hay insignias configuradas</p>';
+        container.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px;">No hay logros configurados aún 🏆</p>';
         return;
     }
 
+    // Calcular puntuaciones del usuario
     let userScores = {};
-    db.categories.forEach(c => userScores[c] = 0);
-
-    currentUser.tasks.forEach(t => {
-        if(t.status === 'Terminada') {
-            for(let cat in t.scores) {
-                if(!userScores[cat]) userScores[cat] = 0;
-                userScores[cat] += t.scores[cat];
-            }
-        }
+    db.superpowers.forEach(sp => {
+        userScores[sp.name] = {};
+        sp.powers.forEach(p => {
+            userScores[sp.name][p] = 0;
+        });
     });
 
-    if(currentUser.customScores) {
-        for(let cat in currentUser.customScores) {
-            if(!userScores[cat]) userScores[cat] = 0;
-            userScores[cat] += currentUser.customScores[cat];
+    if(currentUser.missions) {
+        currentUser.missions.forEach(mission => {
+            if(mission.status === 'Terminada') {
+                for(let sp in mission.scores) {
+                    for(let power in mission.scores[sp]) {
+                        if(!userScores[sp]) userScores[sp] = {};
+                        if(!userScores[sp][power]) userScores[sp][power] = 0;
+                        userScores[sp][power] += mission.scores[sp][power];
+                    }
+                }
+            }
+        });
+    }
+
+    if(currentUser.powerScores) {
+        for(let sp in currentUser.powerScores) {
+            for(let power in currentUser.powerScores[sp]) {
+                if(!userScores[sp]) userScores[sp] = {};
+                if(!userScores[sp][power]) userScores[sp][power] = 0;
+                userScores[sp][power] += currentUser.powerScores[sp][power];
+            }
         }
     }
 
-    const totalPoints = Object.values(userScores).reduce((a, b) => a + b, 0);
+    // Calcular total de puntos
+    let totalPoints = 0;
+    for(let sp in userScores) {
+        for(let power in userScores[sp]) {
+            totalPoints += userScores[sp][power];
+        }
+    }
 
-    container.innerHTML = '<div class="badge-grid"></div>';
-    const grid = container.querySelector('.badge-grid');
+    container.innerHTML = '<div class="badges-grid"></div>';
+    const grid = container.querySelector('.badges-grid');
 
     db.badges.forEach(badge => {
         let unlocked = false;
@@ -319,116 +332,283 @@ function renderBadges() {
         
         if(badge.requirementType === 'total') {
             unlocked = totalPoints >= badge.totalPoints;
-            progressText = unlocked ? '🎉 Desbloqueada' : `${totalPoints}/${badge.totalPoints} pts`;
+            progressText = unlocked ? '🎉 Desbloqueado' : `${totalPoints}/${badge.totalPoints} pts`;
         } else if(badge.requirementType === 'category') {
-            const userPoints = userScores[badge.categoryRequirement.category] || 0;
-            unlocked = userPoints >= badge.categoryRequirement.points;
-            progressText = unlocked ? '🎉 Desbloqueada' : `${userPoints}/${badge.categoryRequirement.points} pts en ${badge.categoryRequirement.category}`;
+            // Adaptado para superpoderes
+            let categoryPoints = 0;
+            if(userScores[badge.categoryRequirement.category]) {
+                for(let power in userScores[badge.categoryRequirement.category]) {
+                    categoryPoints += userScores[badge.categoryRequirement.category][power];
+                }
+            }
+            unlocked = categoryPoints >= badge.categoryRequirement.points;
+            progressText = unlocked ? '🎉 Desbloqueado' : `${categoryPoints}/${badge.categoryRequirement.points} pts en ${badge.categoryRequirement.category}`;
         } else if(badge.requirementType === 'multiple') {
             unlocked = Object.entries(badge.multipleRequirements).every(([cat, req]) => {
-                return (userScores[cat] || 0) >= req;
+                let catPoints = 0;
+                if(userScores[cat]) {
+                    for(let power in userScores[cat]) {
+                        catPoints += userScores[cat][power];
+                    }
+                }
+                return catPoints >= req;
             });
             if(!unlocked) {
                 const progress = Object.entries(badge.multipleRequirements).map(([cat, req]) => {
-                    const current = userScores[cat] || 0;
+                    let current = 0;
+                    if(userScores[cat]) {
+                        for(let power in userScores[cat]) {
+                            current += userScores[cat][power];
+                        }
+                    }
                     return `${cat}: ${current}/${req}`;
                 }).join(', ');
                 progressText = progress;
             } else {
-                progressText = '🎉 Desbloqueada';
+                progressText = '🎉 Desbloqueado';
             }
         }
         
-        grid.innerHTML += `
-            <div class="badge-item">
-                <div class="badge-image ${unlocked ? 'unlocked' : 'locked'}">
-                    ${badge.emoji}
-                </div>
-                <div class="badge-name">${badge.name}</div>
-                <div class="badge-progress">${progressText}</div>
+        const badgeCard = document.createElement('div');
+        badgeCard.className = 'badge-item';
+        
+        badgeCard.innerHTML = `
+            <div class="badge-image ${unlocked ? 'unlocked' : 'locked'}">
+                ${badge.emoji}
             </div>
+            <div class="badge-name">${badge.name}</div>
+            <div class="badge-progress">${progressText}</div>
         `;
+        
+        grid.appendChild(badgeCard);
     });
 }
 
-// Modal de estado
-let currentTaskId = null;
+// ========================================
+// DIARIO DEL HÉROE
+// ========================================
 
-function openStatusModal(taskId) {
-    currentTaskId = taskId;
-    const task = currentUser.tasks.find(t => t.id === taskId);
-    if(!task) return;
+function renderDiary() {
+    const container = document.getElementById('diary-container');
+    container.innerHTML = '';
     
-    document.getElementById('modal-task-title').innerText = task.title;
-    document.getElementById('status-modal').classList.add('active');
+    if(!currentUser.missions || currentUser.missions.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px;">Aún no hay entradas en tu diario 📖</p>';
+        return;
+    }
+    
+    // Filtrar misiones con fecha
+    const datedMissions = currentUser.missions
+        .filter(m => m.date || m.startDate)
+        .sort((a, b) => {
+            const dateA = a.date || a.startDate;
+            const dateB = b.date || b.startDate;
+            return new Date(dateB) - new Date(dateA);
+        });
+    
+    if(datedMissions.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999; margin-top:40px;">No hay misiones con fecha asignada</p>';
+        return;
+    }
+    
+    // Agrupar por fecha
+    let currentDate = '';
+    let dayContainer = null;
+    
+    datedMissions.forEach(mission => {
+        const missionDate = mission.date || mission.startDate;
+        
+        if(missionDate !== currentDate) {
+            currentDate = missionDate;
+            const dateObj = new Date(missionDate + 'T00:00:00');
+            const dayName = dayNames[dateObj.getDay()];
+            
+            dayContainer = document.createElement('div');
+            dayContainer.className = 'diary-day';
+            
+            dayContainer.innerHTML = `
+                <h4 class="diary-date">📅 ${missionDate} - ${dayName}</h4>
+                <div class="diary-missions"></div>
+            `;
+            
+            container.appendChild(dayContainer);
+        }
+        
+        const missionsContainer = dayContainer.querySelector('.diary-missions');
+        const missionCard = createDiaryMissionCard(mission);
+        missionsContainer.appendChild(missionCard);
+    });
 }
 
-function closeStatusModal() {
-    document.getElementById('status-modal').classList.remove('active');
-    currentTaskId = null;
+function createDiaryMissionCard(mission) {
+    const card = document.createElement('div');
+    
+    let statusClass = 'espera';
+    let statusIcon = '⏳';
+    let statusText = mission.status;
+    
+    if(mission.status === 'En proceso') {
+        statusClass = 'proceso';
+        statusIcon = '🔄';
+    } else if(mission.status === 'Terminada') {
+        statusClass = 'terminada';
+        statusIcon = '✅';
+    } else if(mission.status === 'Perdida') {
+        statusClass = 'perdida';
+        statusIcon = '❌';
+    }
+    
+    card.className = `diary-mission-card st-${statusClass}`;
+    
+    let timeInfo = '';
+    if(mission.timeStart && mission.timeEnd) {
+        timeInfo = `<div class="diary-time">🕐 ${mission.timeStart} - ${mission.timeEnd}</div>`;
+    }
+    
+    card.innerHTML = `
+        <div class="diary-mission-header">
+            <span class="diary-status-icon">${statusIcon}</span>
+            <strong>${mission.title}</strong>
+        </div>
+        ${timeInfo}
+        ${mission.description ? `<p class="diary-description">${mission.description}</p>` : ''}
+        <div class="diary-mission-footer">
+            <span class="diary-status">${statusText}</span>
+            ${mission.isRepeat ? '<span class="diary-repeat">🔄 Repetitiva</span>' : ''}
+        </div>
+    `;
+    
+    return card;
 }
 
-function changeTaskStatus(newStatus) {
-    if(!currentTaskId) return;
+// ========================================
+// MODAL DE MISIÓN
+// ========================================
+
+let currentMissionId = null;
+
+function openMissionModal(missionId) {
+    currentMissionId = missionId;
+    const mission = currentUser.missions.find(m => m.id === missionId);
+    if(!mission) return;
     
-    const task = currentUser.tasks.find(t => t.id === currentTaskId);
-    if(!task) return;
+    // Si la misión está fuera de horario, no permitir interacción
+    if(mission.temporarilyUnavailable) {
+        alert('⏰ Esta misión solo está disponible en el horario especificado.');
+        return;
+    }
     
-    task.status = newStatus;
+    document.getElementById('mission-modal-title').innerText = mission.title;
+    document.getElementById('mission-modal-description').innerText = mission.description || 'Sin descripción';
+    document.getElementById('mission-modal-select-msg').innerText = mission.selectMessage || '¡Excelente elección, héroe! 🦸';
     
-    if((newStatus === 'Terminada' || newStatus === 'Perdida') && task.isRepeat && task.repeatDays) {
-        generateNextRepeatingTask(task);
+    // Mostrar recompensas
+    let rewardsHtml = '';
+    for(let sp in mission.scores) {
+        for(let power in mission.scores[sp]) {
+            const points = mission.scores[sp][power];
+            if(points > 0) {
+                rewardsHtml += `<div class="reward-item">💎 ${power}: +${points} pts</div>`;
+            }
+        }
+    }
+    document.getElementById('mission-modal-rewards').innerHTML = rewardsHtml || '<p style="color:#999;">Sin recompensas</p>';
+    
+    document.getElementById('mission-modal').classList.add('active');
+}
+
+function closeMissionModal() {
+    document.getElementById('mission-modal').classList.remove('active');
+    currentMissionId = null;
+}
+
+function startMission() {
+    if(!currentMissionId) return;
+    
+    const mission = currentUser.missions.find(m => m.id === currentMissionId);
+    if(!mission) return;
+    
+    mission.status = 'En proceso';
+    save();
+    
+    closeMissionModal();
+    renderMissions();
+    renderDiary();
+    alert(mission.selectMessage || '¡Misión en marcha! 🚀');
+}
+
+function completeMission() {
+    if(!currentMissionId) return;
+    
+    const mission = currentUser.missions.find(m => m.id === currentMissionId);
+    if(!mission) return;
+    
+    mission.status = 'Terminada';
+    
+    // Generar siguiente tarea repetitiva si aplica
+    if(mission.isRepeat && mission.repeatDays) {
+        generateNextRepeatingMission(mission);
     }
     
     save();
-    closeStatusModal();
-    renderTasks();
-    renderCalendar();
-    renderScores();
-    renderBadges();
+    closeMissionModal();
+    renderMissions();
+    renderPowers();
+    renderAchievements();
+    renderDiary();
+    
+    alert(mission.completeMessage || '¡Misión cumplida! Has ganado experiencia 🌟');
 }
 
-function generateNextRepeatingTask(completedTask) {
-    const futureTasks = currentUser.tasks.filter(t => 
-        t.groupId === completedTask.groupId && 
-        (t.status === 'En espera' || t.status === 'En proceso') &&
-        t.id !== completedTask.id
+function generateNextRepeatingMission(completedMission) {
+    const futureMissions = currentUser.missions.filter(m => 
+        m.groupId === completedMission.groupId && 
+        (m.status === 'En espera' || m.status === 'En proceso') &&
+        m.id !== completedMission.id
     );
     
-    if(futureTasks.length >= 3) return;
+    if(futureMissions.length >= 3) return;
     
-    const taskDate = new Date(completedTask.date + 'T00:00:00');
-    let nextDate = new Date(taskDate);
+    const missionDate = new Date((completedMission.date || completedMission.startDate) + 'T00:00:00');
+    let nextDate = new Date(missionDate);
     nextDate.setDate(nextDate.getDate() + 1);
     
     let found = false;
     let attempts = 0;
     
     while(!found && attempts < 30) {
-        if(completedTask.repeatDays.includes(nextDate.getDay())) {
+        if(completedMission.repeatDays.includes(nextDate.getDay())) {
             const nextDateStr = nextDate.toISOString().split('T')[0];
             
-            const exists = currentUser.tasks.some(t => 
-                t.groupId === completedTask.groupId && 
-                t.date === nextDateStr
+            const exists = currentUser.missions.some(m => 
+                m.groupId === completedMission.groupId && 
+                (m.date === nextDateStr || m.startDate === nextDateStr)
             );
             
             if(!exists) {
-                const newTaskId = Date.now() + Math.random();
-                const newTask = {
-                    id: newTaskId,
-                    groupId: completedTask.groupId,
-                    title: `${completedTask.baseTitle}. ${dayNames[nextDate.getDay()]}`,
-                    baseTitle: completedTask.baseTitle,
+                const newMissionId = Date.now() + Math.random();
+                const newMission = {
+                    id: newMissionId,
+                    groupId: completedMission.groupId,
+                    title: `${completedMission.baseTitle}`,
+                    baseTitle: completedMission.baseTitle,
+                    description: completedMission.description,
+                    type: completedMission.type,
                     date: nextDateStr,
+                    startDate: nextDateStr,
+                    endDate: nextDateStr,
+                    timeStart: completedMission.timeStart,
+                    timeEnd: completedMission.timeEnd,
                     status: 'En espera',
-                    scores: completedTask.scores,
+                    scores: completedMission.scores,
                     isRepeat: true,
-                    repeatDays: completedTask.repeatDays,
-                    userId: currentUser.id
+                    repeatDays: completedMission.repeatDays,
+                    userId: currentUser.id,
+                    selectMessage: completedMission.selectMessage,
+                    completeMessage: completedMission.completeMessage
                 };
                 
-                currentUser.tasks.push(newTask);
+                currentUser.missions.push(newMission);
                 
                 const userIndex = db.users.findIndex(u => u.id === currentUser.id);
                 db.users[userIndex] = currentUser;

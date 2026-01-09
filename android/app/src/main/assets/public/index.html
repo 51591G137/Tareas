@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Academia de Héroes</title>
+    <title>Gestor Elite</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
     <!-- Pantalla de inicio -->
     <div id="screen-home" class="screen active">
-        <h2 style="text-align: center; margin-top: 40px;">🦸 Academia de Héroes</h2>
-        <p style="text-align: center; color: #666;">Selecciona tu héroe</p>
+        <h2 style="text-align: center; margin-top: 40px;">Hola, ¿quién eres?</h2>
+        <p style="text-align: center; color: #666;">Selecciona tu perfil</p>
         <div id="users-list-home"></div>
         
         <button class="settings-btn" onclick="navTo('screen-settings')">⚙️</button>
@@ -20,82 +20,56 @@
     <!-- Pantalla de configuración -->
     <div id="screen-settings" class="screen">
         <button class="secondary small" onclick="navTo('screen-home')" style="margin-bottom: 15px;">⬅ Volver</button>
-        <h3>Centro de Control</h3>
+        <h3>Configuración</h3>
         
         <div class="config-tabs">
-            <button class="config-tab active" onclick="showConfigTab('tab-heroes')">🦸 Héroes</button>
-            <button class="config-tab" onclick="showConfigTab('tab-missions')">🎯 Misiones</button>
-            <button class="config-tab" onclick="showConfigTab('tab-powers')">⚡ Poderes</button>
-            <button class="config-tab" onclick="showConfigTab('tab-badges')">🏆 Logros</button>
+            <button class="config-tab active" onclick="showConfigTab('tab-users')">👥 Usuarios</button>
+            <button class="config-tab" onclick="showConfigTab('tab-tasks')">📋 Tareas</button>
+            <button class="config-tab" onclick="showConfigTab('tab-badges')">🎖️ Insignias</button>
             <button class="config-tab" onclick="showConfigTab('tab-backup')">💾 Backup</button>
         </div>
 
-        <!-- TAB: Héroes -->
-        <div id="tab-heroes" class="config-tab-content">
+        <!-- TAB: Usuarios -->
+        <div id="tab-users" class="config-tab-content">
             <div class="card">
-                <h4>Gestionar Héroes</h4>
-                <input type="text" id="new-user-name" placeholder="Nombre del nuevo héroe">
-                <button onclick="createUser()">+ Añadir Héroe</button>
+                <h4>Gestionar Usuarios</h4>
+                <input type="text" id="new-user-name" placeholder="Nombre nuevo usuario">
+                <button onclick="createUser()">Añadir Usuario</button>
                 <div id="users-manage-list" style="margin-top:15px;"></div>
             </div>
 
             <div class="card">
-                <h4>Editar Puntuaciones de Héroes</h4>
-                <p style="font-size: 12px; color: #666;">Modifica directamente los puntos de cada héroe</p>
+                <h4>Editar Puntuaciones de Usuarios</h4>
+                <p style="font-size: 12px; color: #666;">Modifica directamente los puntos de cada usuario</p>
                 <select id="edit-scores-user" onchange="loadUserScores()">
-                    <option value="">Selecciona un héroe</option>
+                    <option value="">Selecciona un usuario</option>
                 </select>
                 <div id="user-scores-editor" style="display:none; margin-top:10px;"></div>
             </div>
         </div>
 
-        <!-- TAB: Misiones -->
-        <div id="tab-missions" class="config-tab-content" style="display:none;">
+        <!-- TAB: Tareas -->
+        <div id="tab-tasks" class="config-tab-content" style="display:none;">
             <div class="card">
-                <h4>Tipos de Misiones</h4>
-                <p style="font-size: 12px; color: #666;">Gestiona los tipos de misiones disponibles</p>
-                <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-                    <input type="text" id="new-mission-type-icon" placeholder="Emoji" maxlength="2" style="width: 60px;">
-                    <input type="text" id="new-mission-type-name" placeholder="Nombre del tipo" style="flex: 1;">
-                    <button onclick="addMissionType()" style="width: auto;">+ Añadir</button>
-                </div>
-                <div id="mission-types-list"></div>
+                <h4>Gestión de Categorías</h4>
+                <p style="font-size: 12px; color: #666;">Añade, edita o elimina categorías. Arrastra para reordenar.</p>
+                <input type="text" id="new-category" placeholder="Nueva categoría (ej: Puntualidad)">
+                <button onclick="addCategory()">+ Añadir Categoría</button>
+                <div id="categories-list" style="margin-top: 15px;"></div>
             </div>
 
             <div class="card">
-                <h4>Crear Misión Global</h4>
-                <input type="text" id="gm-title" placeholder="Título de la misión">
-                <textarea id="gm-description" placeholder="Descripción de la misión (opcional)" style="width: 100%; min-height: 60px; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;"></textarea>
-                
-                <label style="font-size: 12px; color: #666; margin-top: 10px;">Tipo de misión:</label>
-                <select id="gm-type"></select>
-                
-                <label style="font-size: 12px; color: #666; margin-top: 10px;">Fecha de inicio:</label>
-                <input type="date" id="gm-start-date">
-                
-                <label style="font-size: 12px; color: #666; margin-top: 5px;">Fecha de fin:</label>
-                <input type="date" id="gm-end-date">
-                
-                <div style="margin: 10px 0;">
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" id="gm-time-range" onchange="toggleTimeRange()" style="width: auto; margin: 0;"> 
-                        ¿Tiene horario específico?
-                    </label>
-                </div>
-
-                <div id="time-range-options" style="display:none;">
-                    <label style="font-size: 12px;">Hora de inicio:</label>
-                    <input type="time" id="gm-time-start">
-                    <label style="font-size: 12px;">Hora de fin:</label>
-                    <input type="time" id="gm-time-end">
-                </div>
+                <h4>Crear Tarea Global</h4>
+                <input type="text" id="gt-title" placeholder="Título de la tarea">
+                <label style="font-size: 12px; color: #666; margin-top: 5px;">Fecha (opcional):</label>
+                <input type="date" id="gt-date">
                 
                 <p style="margin: 10px 0 5px 0;"><strong>Asignar a:</strong></p>
-                <div id="gm-user-assign" class="user-checkbox-list"></div>
+                <div id="gt-user-assign" class="user-checkbox-list"></div>
 
                 <div style="margin: 10px 0;">
                     <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" id="gm-repeat" onchange="toggleRepeat()" style="width: auto; margin: 0;"> 
+                        <input type="checkbox" id="gt-repeat" onchange="toggleRepeat()" style="width: auto; margin: 0;"> 
                         ¿Se repite?
                     </label>
                 </div>
@@ -113,42 +87,25 @@
                     </div>
                 </div>
 
-                <h4 style="margin-top: 15px;">Recompensas (Puntos de Poder)</h4>
-                <div id="gm-scores"></div>
+                <h4 style="margin-top: 15px;">Puntuaciones</h4>
+                <div id="gt-scores"></div>
                 
-                <h4 style="margin-top: 15px;">Mensajes</h4>
-                <label style="font-size: 12px;">Mensaje al seleccionar:</label>
-                <input type="text" id="gm-select-msg" placeholder="¡Excelente elección, héroe! 🦸">
-                <label style="font-size: 12px;">Mensaje al completar:</label>
-                <input type="text" id="gm-complete-msg" placeholder="¡Misión cumplida! Has ganado experiencia 🌟">
-                
-                <button onclick="saveGlobalMission()" style="margin-top:10px; background: var(--success);">Crear Misiones</button>
+                <button onclick="saveGlobalTask()" style="margin-top:10px;">Crear Tareas</button>
             </div>
 
             <div class="card">
-                <h4>Misiones Globales Creadas</h4>
-                <div id="global-missions-list"></div>
+                <h4>Tareas Globales Creadas</h4>
+                <div id="global-tasks-list"></div>
             </div>
         </div>
 
-        <!-- TAB: Poderes -->
-        <div id="tab-powers" class="config-tab-content" style="display:none;">
-            <div class="card">
-                <h4>Gestión de Superpoderes y Poderes</h4>
-                <p style="font-size: 12px; color: #666;">Los Superpoderes contienen Poderes específicos que los héroes pueden desarrollar</p>
-                <input type="text" id="new-superpower" placeholder="Nuevo Superpoder (ej: Responsabilidad)">
-                <button onclick="addSuperpower()">+ Añadir Superpoder</button>
-                <div id="superpowers-list" style="margin-top: 15px;"></div>
-            </div>
-        </div>
-
-        <!-- TAB: Logros -->
+        <!-- TAB: Insignias -->
         <div id="tab-badges" class="config-tab-content" style="display:none;">
             <div class="card">
-                <h4>Crear Logro</h4>
-                <p style="font-size: 12px; color: #666;">Crea logros que se desbloquean al alcanzar puntos</p>
+                <h4>Crear Insignia</h4>
+                <p style="font-size: 12px; color: #666;">Crea insignias que se desbloquean al alcanzar puntos</p>
                 
-                <label style="font-size: 12px;">Nombre del logro:</label>
+                <label style="font-size: 12px;">Nombre de la insignia:</label>
                 <input type="text" id="badge-name" placeholder="Ej: Maestro del Orden">
                 
                 <label style="font-size: 12px;">Emoji/Icono:</label>
@@ -156,9 +113,9 @@
                 
                 <label style="font-size: 12px;">Tipo de requisito:</label>
                 <select id="badge-req-type" onchange="toggleBadgeRequirements()">
-                    <option value="total">Puntos totales (suma de todos los poderes)</option>
-                    <option value="category">Puntos en superpoder específico</option>
-                    <option value="multiple">Puntos en múltiples superpoderes</option>
+                    <option value="total">Puntos totales (suma de todas las categorías)</option>
+                    <option value="category">Puntos en categoría específica</option>
+                    <option value="multiple">Puntos en múltiples categorías</option>
                 </select>
                 
                 <div id="badge-total-req" style="margin-top: 10px;">
@@ -167,22 +124,22 @@
                 </div>
 
                 <div id="badge-category-req" style="display: none; margin-top: 10px;">
-                    <label style="font-size: 12px;">Superpoder:</label>
+                    <label style="font-size: 12px;">Categoría:</label>
                     <select id="badge-category"></select>
                     <label style="font-size: 12px;">Puntos necesarios:</label>
                     <input type="number" id="badge-category-points" placeholder="Ej: 100" min="1">
                 </div>
 
                 <div id="badge-multiple-req" style="display: none; margin-top: 10px;">
-                    <p style="font-size: 12px;"><strong>Puntos necesarios por superpoder:</strong></p>
+                    <p style="font-size: 12px;"><strong>Puntos necesarios por categoría:</strong></p>
                     <div id="badge-multiple-scores"></div>
                 </div>
                 
-                <button onclick="addBadge()" style="background: var(--success); margin-top: 10px;">+ Añadir Logro</button>
+                <button onclick="addBadge()" style="background: var(--success); margin-top: 10px;">+ Añadir Insignia</button>
             </div>
 
             <div class="card">
-                <h4>Logros Creados</h4>
+                <h4>Insignias Creadas</h4>
                 <div id="badges-list"></div>
             </div>
         </div>
@@ -192,7 +149,7 @@
             <div class="card">
                 <h4>Copia de Seguridad</h4>
                 <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
-                    Guarda todos tus datos (héroes, misiones, puntuaciones, logros).
+                    Guarda todos tus datos (usuarios, tareas, puntuaciones, insignias).
                 </p>
                 <button onclick="exportBackup()" style="background: var(--success);">📤 Compartir/Crear Backup</button>
                 
@@ -216,93 +173,66 @@
     <!-- Aplicación principal -->
     <div id="main-app" style="display:none;">
         <div style="position: fixed; top: 0; left: 0; right: 0; background: #fff; padding: 15px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 200; display: flex; justify-content: space-between; align-items: center;">
-            <h2 id="user-title" style="margin: 0;">Misiones</h2>
+            <h2 id="user-title" style="margin: 0;">Tareas</h2>
             <button class="danger small" onclick="logout()">Salir</button>
         </div>
 
         <div style="padding-top: 70px;">
-            <div id="view-missions" class="screen">
-                <div id="missions-container"></div>
+            <div id="view-tasks" class="screen">
+                <div id="tasks-container"></div>
             </div>
 
-            <div id="view-powers" class="screen">
-                <div id="powers-container"></div>
+            <div id="view-calendar" class="screen">
+                <h3 style="margin-top: 0;">Calendario</h3>
+                <div id="calendar-container"></div>
             </div>
 
-            <div id="view-achievements" class="screen">
-                <div id="achievements-container"></div>
+            <div id="view-scores" class="screen">
+                <h3 style="margin-top: 0;">Mi Puntuación</h3>
+                <div id="scores-container"></div>
             </div>
 
-            <div id="view-diary" class="screen">
-                <div id="diary-container"></div>
+            <div id="view-badges" class="screen">
+                <h3 style="margin-top: 0;">Mis Insignias</h3>
+                <div id="badges-container"></div>
             </div>
         </div>
 
         <nav class="nav-bottom">
-            <button class="nav-btn" onclick="showView('view-missions')">🎯<br><small>Misiones</small></button>
-            <button class="nav-btn" onclick="showView('view-powers')">⚡<br><small>Poderes</small></button>
-            <button class="nav-btn" onclick="showView('view-achievements')">🏆<br><small>Logros</small></button>
-            <button class="nav-btn" onclick="showView('view-diary')">📖<br><small>Diario</small></button>
+            <button class="nav-btn" onclick="showView('view-tasks')">Tareas</button>
+            <button class="nav-btn" onclick="showView('view-calendar')">Calendario</button>
+            <button class="nav-btn" onclick="showView('view-scores')">Puntos</button>
+            <button class="nav-btn" onclick="showView('view-badges')">Insignias</button>
         </nav>
     </div>
 
-    <!-- Modal de misión -->
-    <div id="mission-modal" class="modal">
+    <!-- Modales -->
+    <div id="status-modal" class="modal">
         <div class="modal-content">
-            <h3 id="mission-modal-title">Misión</h3>
-            <p id="mission-modal-description" style="color: #666; margin-bottom: 15px;"></p>
-            
-            <div style="background: #e3f2fd; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-                <p id="mission-modal-select-msg" style="margin: 0; font-style: italic; color: #1976d2;"></p>
+            <h3>Cambiar estado de tarea</h3>
+            <p id="modal-task-title"></p>
+            <div class="task-actions">
+                <button class="secondary" onclick="changeTaskStatus('En espera')">⏳ En espera</button>
+                <button style="background: var(--info);" onclick="changeTaskStatus('En proceso')">🔄 En proceso</button>
+                <button style="background: var(--success);" onclick="changeTaskStatus('Terminada')">✅ Terminada</button>
+                <button class="danger" onclick="changeTaskStatus('Perdida')">❌ Perdida</button>
             </div>
-            
-            <h4>Recompensas:</h4>
-            <div id="mission-modal-rewards" style="margin-bottom: 15px;"></div>
-            
-            <div class="modal-buttons">
-                <button onclick="startMission()" style="background: var(--info);">🚀 Empezar Misión</button>
-                <button onclick="completeMission()" style="background: var(--success);">✅ Marcar como Completada</button>
-                <button class="secondary" onclick="closeMissionModal()">Cancelar</button>
-            </div>
+            <button class="secondary" onclick="closeStatusModal()" style="margin-top: 15px;">Cancelar</button>
         </div>
     </div>
 
-    <!-- Modal de edición de misión -->
-    <div id="edit-mission-modal" class="modal">
+    <div id="edit-task-modal" class="modal">
         <div class="modal-content">
-            <h3>Editar Misión</h3>
-            <input type="text" id="edit-mission-title" placeholder="Título">
-            <textarea id="edit-mission-description" placeholder="Descripción" style="width: 100%; min-height: 60px; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;"></textarea>
-            
-            <label style="font-size: 12px;">Tipo:</label>
-            <select id="edit-mission-type"></select>
-            
-            <label style="font-size: 12px;">Fecha inicio:</label>
-            <input type="date" id="edit-mission-start-date">
-            
-            <label style="font-size: 12px;">Fecha fin:</label>
-            <input type="date" id="edit-mission-end-date">
-            
-            <div style="margin: 10px 0;">
-                <label style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="edit-mission-time-range" onchange="toggleEditTimeRange()" style="width: auto; margin: 0;"> 
-                    ¿Tiene horario específico?
-                </label>
-            </div>
-
-            <div id="edit-time-range-options" style="display:none;">
-                <label style="font-size: 12px;">Hora inicio:</label>
-                <input type="time" id="edit-mission-time-start">
-                <label style="font-size: 12px;">Hora fin:</label>
-                <input type="time" id="edit-mission-time-end">
-            </div>
+            <h3>Editar Tarea</h3>
+            <input type="text" id="edit-task-title" placeholder="Título">
+            <input type="date" id="edit-task-date">
             
             <p style="margin: 10px 0 5px 0;"><strong>Asignar a:</strong></p>
-            <div id="edit-mission-user-assign" class="user-checkbox-list"></div>
+            <div id="edit-task-user-assign" class="user-checkbox-list"></div>
 
             <div style="margin: 10px 0;">
                 <label style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="edit-mission-repeat" onchange="toggleEditRepeat()" style="width: auto; margin: 0;"> 
+                    <input type="checkbox" id="edit-task-repeat" onchange="toggleEditRepeat()" style="width: auto; margin: 0;"> 
                     ¿Se repite?
                 </label>
             </div>
@@ -320,21 +250,16 @@
                 </div>
             </div>
 
-            <h4>Recompensas</h4>
-            <div id="edit-mission-scores"></div>
-
-            <h4>Mensajes</h4>
-            <input type="text" id="edit-mission-select-msg" placeholder="Mensaje al seleccionar">
-            <input type="text" id="edit-mission-complete-msg" placeholder="Mensaje al completar">
+            <h4>Puntuaciones</h4>
+            <div id="edit-task-scores"></div>
 
             <div class="modal-buttons">
-                <button onclick="saveEditedMission()">Guardar</button>
-                <button class="secondary" onclick="closeEditMissionModal()">Cancelar</button>
+                <button onclick="saveEditedTask()">Guardar</button>
+                <button class="secondary" onclick="closeEditModal()">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal de pegar backup -->
     <div id="paste-backup-modal" class="modal">
         <div class="modal-content">
             <h3>Pegar Backup</h3>
@@ -347,18 +272,17 @@
         </div>
     </div>
 
-    <!-- Modal editar logro -->
     <div id="edit-badge-modal" class="modal">
         <div class="modal-content">
-            <h3>Editar Logro</h3>
+            <h3>Editar Insignia</h3>
             <input type="text" id="edit-badge-name" placeholder="Nombre">
             <input type="text" id="edit-badge-emoji" placeholder="Emoji" maxlength="2">
             
             <label style="font-size: 12px;">Tipo de requisito:</label>
             <select id="edit-badge-req-type" onchange="toggleEditBadgeRequirements()">
                 <option value="total">Puntos totales</option>
-                <option value="category">Superpoder específico</option>
-                <option value="multiple">Múltiples superpoderes</option>
+                <option value="category">Categoría específica</option>
+                <option value="multiple">Múltiples categorías</option>
             </select>
             
             <div id="edit-badge-total-req" style="margin-top: 10px;">
@@ -386,8 +310,8 @@
     <script src="js/views.js"></script>
     <script src="js/navigation.js"></script>
     <script src="js/users.js"></script>
-    <script src="js/superpowers.js"></script>
-    <script src="js/missions.js"></script>
+    <script src="js/categories.js"></script>
+    <script src="js/tasks.js"></script>
     <script src="js/badges.js"></script>
     <script src="js/backup.js"></script>
     
@@ -397,15 +321,15 @@
             // Inicializar variables globales
             window.currentUser = null;
             window.dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-            window.dayNamesShort = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
             window.monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
             
             // Asegurarse de que la base de datos esté cargada
             if (typeof db === 'undefined') {
                 console.error('La base de datos no se cargó correctamente');
+                // Intentar cargar manualmente
                 window.db = loadDatabase();
                 window.save = function() { 
-                    db.version = 5;
+                    db.version = 4;
                     localStorage.setItem('eliteDB', JSON.stringify(db)); 
                 };
             }
@@ -415,8 +339,9 @@
                 renderHome();
             } else {
                 console.error('renderHome no está definida');
+                // Mostrar un error en la pantalla
                 document.getElementById('users-list-home').innerHTML = 
-                    '<p style="color: red;">Error: la función renderHome no está disponible.</p>';
+                    '<p style="color: red;">Error: la función renderHome no está disponible. Revisa la consola para más detalles.</p>';
             }
         });
     </script>

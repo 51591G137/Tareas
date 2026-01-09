@@ -1,19 +1,23 @@
-// users.js - Gestión de usuarios y puntuaciones
+// users.js - Gestión de usuarios (héroes) y puntuaciones
 
 function createUser() {
     const name = document.getElementById('new-user-name').value.trim();
     if(!name) return alert('Escribe un nombre');
-    if(db.users.some(u => u.name === name)) return alert('Ya existe un usuario con ese nombre');
+    if(db.users.some(u => u.name === name)) return alert('Ya existe un héroe con ese nombre');
     
     const newUser = {
         id: Date.now(),
         name: name,
-        tasks: [],
-        customScores: {}
+        missions: [],
+        powerScores: {}
     };
     
-    db.categories.forEach(cat => {
-        newUser.customScores[cat] = 0;
+    // Inicializar puntuaciones de poderes
+    db.superpowers.forEach(sp => {
+        newUser.powerScores[sp.name] = {};
+        sp.powers.forEach(power => {
+            newUser.powerScores[sp.name][power] = 0;
+        });
     });
     
     db.users.push(newUser);
@@ -32,9 +36,9 @@ function updateUserName(id, name) {
 }
 
 function deleteUser(id) {
-    if(!confirm('¿Borrar usuario? Se eliminarán todas sus tareas.')) return;
+    if(!confirm('¿Borrar héroe? Se eliminarán todas sus misiones.')) return;
     
-    db.globalTasks = db.globalTasks.filter(gt => gt.userId !== id);
+    db.globalMissions = db.globalMissions.filter(gm => gm.userId !== id);
     db.users = db.users.filter(u => u.id !== id);
     save();
     renderUsersTab();
@@ -53,7 +57,7 @@ function renderUsersTab() {
     });
 
     const editScoresSelect = document.getElementById('edit-scores-user');
-    editScoresSelect.innerHTML = '<option value="">Selecciona un usuario</option>';
+    editScoresSelect.innerHTML = '<option value="">Selecciona un héroe</option>';
     db.users.forEach(u => {
         editScoresSelect.innerHTML += `<option value="${u.id}">${u.name}</option>`;
     });
@@ -69,51 +73,76 @@ function loadUserScores() {
     const user = db.users.find(u => u.id === userId);
     if(!user) return;
     
-    if(!user.customScores) {
-        user.customScores = {};
-        db.categories.forEach(cat => {
-            user.customScores[cat] = 0;
+    // Asegurar estructura de powerScores
+    if(!user.powerScores) {
+        user.powerScores = {};
+        db.superpowers.forEach(sp => {
+            user.powerScores[sp.name] = {};
+            sp.powers.forEach(power => {
+                user.powerScores[sp.name][power] = 0;
+            });
         });
     }
     
-    let taskScores = {};
-    db.categories.forEach(c => taskScores[c] = 0);
-    user.tasks.forEach(t => {
-        if(t.status === 'Terminada') {
-            for(let cat in t.scores) {
-                if(!taskScores[cat]) taskScores[cat] = 0;
-                taskScores[cat] += t.scores[cat];
-            }
-        }
+    // Calcular puntos de misiones
+    let missionScores = {};
+    db.superpowers.forEach(sp => {
+        missionScores[sp.name] = {};
+        sp.powers.forEach(power => {
+            missionScores[sp.name][power] = 0;
+        });
     });
+    
+    if(user.missions) {
+        user.missions.forEach(mission => {
+            if(mission.status === 'Terminada') {
+                for(let sp in mission.scores) {
+                    for(let power in mission.scores[sp]) {
+                        if(!missionScores[sp]) missionScores[sp] = {};
+                        if(!missionScores[sp][power]) missionScores[sp][power] = 0;
+                        missionScores[sp][power] += mission.scores[sp][power];
+                    }
+                }
+            }
+        });
+    }
     
     const editor = document.getElementById('user-scores-editor');
     editor.style.display = 'block';
     editor.innerHTML = '<p style="font-size: 12px; color: #666; margin-bottom: 10px;">Ajusta manualmente los puntos acumulados:</p>';
     
-    db.categories.forEach(cat => {
-        const totalFromTasks = taskScores[cat] || 0;
-        const customValue = user.customScores[cat] || 0;
-        const total = totalFromTasks + customValue;
+    db.superpowers.forEach(sp => {
+        const spSection = document.createElement('div');
+        spSection.className = 'power-score-section';
+        spSection.innerHTML = `<h4 style="margin-top: 15px; color: var(--primary);">${sp.name}</h4>`;
         
-        editor.innerHTML += `
-            <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-                <strong>${cat}</strong><br>
-                <small style="color: #666;">De tareas: ${totalFromTasks} pts</small><br>
-                <label style="font-size: 12px;">Ajuste manual:</label>
-                <input type="number" class="user-score-input" data-cat="${cat}" value="${customValue}" onchange="updateUserScore(${userId}, '${cat}', this.value)" style="margin-top: 5px;">
-                <small style="color: var(--success); font-weight: bold;">Total: ${total} pts</small>
-            </div>
-        `;
+        sp.powers.forEach(power => {
+            const fromMissions = missionScores[sp.name] && missionScores[sp.name][power] ? missionScores[sp.name][power] : 0;
+            const customValue = user.powerScores[sp.name] && user.powerScores[sp.name][power] ? user.powerScores[sp.name][power] : 0;
+            const total = fromMissions + customValue;
+            
+            spSection.innerHTML += `
+                <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                    <strong>⚡ ${power}</strong><br>
+                    <small style="color: #666;">De misiones: ${fromMissions} pts</small><br>
+                    <label style="font-size: 12px;">Ajuste manual:</label>
+                    <input type="number" class="user-power-score-input" data-sp="${sp.name}" data-power="${power}" value="${customValue}" onchange="updateUserPowerScore(${userId}, '${sp.name}', '${power}', this.value)" style="margin-top: 5px;">
+                    <small style="color: var(--success); font-weight: bold;">Total: ${total} pts</small>
+                </div>
+            `;
+        });
+        
+        editor.appendChild(spSection);
     });
 }
 
-function updateUserScore(userId, category, value) {
+function updateUserPowerScore(userId, superpower, power, value) {
     const user = db.users.find(u => u.id === userId);
     if(!user) return;
     
-    if(!user.customScores) user.customScores = {};
-    user.customScores[category] = parseInt(value) || 0;
+    if(!user.powerScores) user.powerScores = {};
+    if(!user.powerScores[superpower]) user.powerScores[superpower] = {};
+    user.powerScores[superpower][power] = parseInt(value) || 0;
     
     save();
     loadUserScores();

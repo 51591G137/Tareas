@@ -8,7 +8,7 @@ function exportBackup() {
                       now.getHours().toString().padStart(2, '0') + 
                       now.getMinutes().toString().padStart(2, '0') +
                       now.getSeconds().toString().padStart(2, '0');
-    const fileName = `gestor_elite_backup_${timestamp}.json`;
+    const fileName = `academia_heroes_backup_${timestamp}.json`;
     
     if (navigator.share && navigator.canShare) {
         const blob = new Blob([dataStr], { type: 'application/json' });
@@ -16,7 +16,7 @@ function exportBackup() {
         
         if (navigator.canShare({ files: [file] })) {
             navigator.share({
-                title: 'Backup Gestor Elite',
+                title: 'Backup Academia de Héroes',
                 text: 'Copia de seguridad',
                 files: [file]
             })
@@ -97,8 +97,23 @@ function processPastedBackup() {
             throw new Error('Formato inválido');
         }
         
-        if(!importedData.categories) importedData.categories = ['Responsabilidad', 'Amabilidad', 'Respeto'];
-        if(!importedData.globalTasks) importedData.globalTasks = [];
+        // Asegurar estructuras necesarias
+        if(!importedData.superpowers) {
+            importedData.superpowers = [
+                { name: 'Responsabilidad', powers: ['Organización', 'Puntualidad', 'Compromiso'] },
+                { name: 'Empatía', powers: ['Amabilidad', 'Escucha activa', 'Comprensión'] },
+                { name: 'Autocontrol', powers: ['Paciencia', 'Gestión emocional', 'Reflexión'] }
+            ];
+        }
+        if(!importedData.missionTypes) {
+            importedData.missionTypes = [
+                { id: 'special', name: 'Misiones Especiales', icon: '⭐' },
+                { id: 'daily', name: 'Misiones Diarias', icon: '🌅' },
+                { id: 'team', name: 'Misiones de Equipo', icon: '👥' },
+                { id: 'challenge', name: 'Desafíos', icon: '🎯' }
+            ];
+        }
+        if(!importedData.globalMissions) importedData.globalMissions = [];
         if(!importedData.badges) importedData.badges = [];
         if(!importedData.version) importedData.version = DB_VERSION;
         
@@ -106,7 +121,7 @@ function processPastedBackup() {
         save();
         
         closePasteBackupModal();
-        alert('✅ Backup restaurado!\n\n- ' + db.users.length + ' usuarios\n- ' + db.categories.length + ' categorías\n- ' + db.badges.length + ' insignias');
+        alert('✅ Backup restaurado!\n\n- ' + db.users.length + ' héroes\n- ' + db.superpowers.length + ' superpoderes\n- ' + db.badges.length + ' logros');
         
         renderSettings();
         renderHome();
@@ -134,8 +149,23 @@ function importBackup(event) {
                 throw new Error('Formato inválido');
             }
             
-            if(!importedData.categories) importedData.categories = ['Responsabilidad', 'Amabilidad', 'Respeto'];
-            if(!importedData.globalTasks) importedData.globalTasks = [];
+            // Asegurar estructuras necesarias
+            if(!importedData.superpowers) {
+                importedData.superpowers = [
+                    { name: 'Responsabilidad', powers: ['Organización', 'Puntualidad', 'Compromiso'] },
+                    { name: 'Empatía', powers: ['Amabilidad', 'Escucha activa', 'Comprensión'] },
+                    { name: 'Autocontrol', powers: ['Paciencia', 'Gestión emocional', 'Reflexión'] }
+                ];
+            }
+            if(!importedData.missionTypes) {
+                importedData.missionTypes = [
+                    { id: 'special', name: 'Misiones Especiales', icon: '⭐' },
+                    { id: 'daily', name: 'Misiones Diarias', icon: '🌅' },
+                    { id: 'team', name: 'Misiones de Equipo', icon: '👥' },
+                    { id: 'challenge', name: 'Desafíos', icon: '🎯' }
+                ];
+            }
+            if(!importedData.globalMissions) importedData.globalMissions = [];
             if(!importedData.badges) importedData.badges = [];
             if(!importedData.version) importedData.version = DB_VERSION;
             
