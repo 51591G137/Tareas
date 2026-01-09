@@ -138,6 +138,12 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Capacitor
-android/
-ios/
+# Capacitor - Archivos temporales
+# Nota: android/ e ios/ se mantienen en el repo para builds más rápidos
+android/app/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/captures/
+ios/App/build/
+ios/App/Pods/

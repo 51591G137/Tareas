@@ -2,7 +2,6 @@
   "appId": "com.academiaheroes.app",
   "appName": "Academia de Héroes",
   "webDir": "www",
-  "bundledWebRuntime": false,
   "android": {
     "versionCode": 5,
     "versionName": "5.0"
