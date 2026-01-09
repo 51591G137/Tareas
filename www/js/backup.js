@@ -1,67 +1,155 @@
-'use strict';
+// backup.js - Sistema de backup y restauración
 
-/**
- * backup.js
- * Sistema de backup y restauración
- */
-
-/** Exporta backup (intenta export nativo) */
 function exportBackup() {
-  console.debug('[backup] exportBackup');
-  // TODO: Generar JSON o formato de backup y ofrecer descarga
+    const dataStr = JSON.stringify(db, null, 2);
+    
+    const now = new Date();
+    const timestamp = now.toISOString().split('T')[0] + '_' + 
+                      now.getHours().toString().padStart(2, '0') + 
+                      now.getMinutes().toString().padStart(2, '0') +
+                      now.getSeconds().toString().padStart(2, '0');
+    const fileName = `gestor_elite_backup_${timestamp}.json`;
+    
+    if (navigator.share && navigator.canShare) {
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const file = new File([blob], fileName, { type: 'application/json' });
+        
+        if (navigator.canShare({ files: [file] })) {
+            navigator.share({
+                title: 'Backup Gestor Elite',
+                text: 'Copia de seguridad',
+                files: [file]
+            })
+            .catch(() => {
+                fallbackExport(dataStr, fileName);
+            });
+            return;
+        }
+    }
+    
+    fallbackExport(dataStr, fileName);
 }
-window.exportBackup = exportBackup;
 
-/** Fallback para export si falla la primera opción */
-function fallbackExport() {
-  console.debug('[backup] fallbackExport');
-  // TODO: Mostrar texto para copiar manualmente
+function fallbackExport(dataStr, fileName) {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+    
+    modal.innerHTML = `
+        <div style="background:white;padding:20px;border-radius:12px;max-width:95%;width:400px;max-height:80vh;overflow:auto;box-sizing:border-box;">
+            <h3 style="margin-top:0;">Backup Generado</h3>
+            <p style="font-size:14px;color:#666;">Copia este texto y guárdalo:</p>
+            <textarea id="backup-text" readonly style="width:100%;height:300px;font-family:monospace;font-size:11px;padding:10px;border:1px solid #ddd;border-radius:5px;margin:10px 0;box-sizing:border-box;">${dataStr}</textarea>
+            <button onclick="copyBackupText()" style="width:100%;background:#4a90e2;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;margin-bottom:10px;">📋 Copiar</button>
+            <button onclick="downloadBackup('${fileName}')" style="width:100%;background:#2ecc71;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;margin-bottom:10px;">💾 Descargar</button>
+            <button onclick="this.parentElement.parentElement.remove()" style="width:100%;background:#95a5a6;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;">Cerrar</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
 }
-window.fallbackExport = fallbackExport;
 
-/** Descarga el backup generado */
-function downloadBackup(filename, content) {
-  console.debug('[backup] downloadBackup', filename);
-  // TODO: Crear blob y forzar descarga
+function downloadBackup(fileName) {
+    const dataStr = document.getElementById('backup-text').value;
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
 }
-window.downloadBackup = downloadBackup;
 
-/** Copia el texto del backup al portapapeles */
-function copyBackupText(text) {
-  console.debug('[backup] copyBackupText');
-  // TODO: navigator.clipboard.writeText(text)
+function copyBackupText() {
+    const textarea = document.getElementById('backup-text');
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        alert('✅ Backup copiado!');
+    } catch (err) {
+        alert('❌ No se pudo copiar.');
+    }
 }
-window.copyBackupText = copyBackupText;
 
-/** Muestra modal para pegar backup (import) */
 function showPasteBackup() {
-  console.debug('[backup] showPasteBackup');
-  // TODO: Abrir modal con textarea
+    document.getElementById('paste-backup-modal').classList.add('active');
+    document.getElementById('paste-backup-text').value = '';
+    document.getElementById('paste-backup-text').focus();
 }
-window.showPasteBackup = showPasteBackup;
 
-/** Procesa texto pegado en modal */
-function processPastedBackup(pastedText) {
-  console.debug('[backup] processPastedBackup');
-  // TODO: Validar JSON y preparar import
-}
-window.processPastedBackup = processPastedBackup;
-
-/** Importa un backup (restauración) */
-function importBackup(parsedBackup) {
-  console.debug('[backup] importBackup');
-  // TODO: Reemplazar/merger datos con precaución
-}
-window.importBackup = importBackup;
-
-/** Cierra el modal de pegar backup */
 function closePasteBackupModal() {
-  console.debug('[backup] closePasteBackupModal');
-  // TODO: Cerrar modal y limpiar campos
+    document.getElementById('paste-backup-modal').classList.remove('active');
+    document.getElementById('paste-backup-text').value = '';
 }
-window.closePasteBackupModal = closePasteBackupModal;
-// Hacer funciones globales
-window.exportBackup = exportBackup;
-window.showPasteBackup = showPasteBackup;
-window.processPastedBackup = processPastedBackup;
-window.closePasteBackupModal = closePasteBackupModal;
+
+function processPastedBackup() {
+    const pastedText = document.getElementById('paste-backup-text').value.trim();
+    
+    if(!pastedText) return alert('❌ No has pegado ningún contenido.');
+    
+    if(!confirm('⚠️ ¿Estás seguro?\n\nSe reemplazarán TODOS los datos actuales.')) return;
+    
+    try {
+        const importedData = JSON.parse(pastedText);
+        
+        if(!importedData.users || !Array.isArray(importedData.users)) {
+            throw new Error('Formato inválido');
+        }
+        
+        if(!importedData.categories) importedData.categories = ['Responsabilidad', 'Amabilidad', 'Respeto'];
+        if(!importedData.globalTasks) importedData.globalTasks = [];
+        if(!importedData.badges) importedData.badges = [];
+        if(!importedData.version) importedData.version = DB_VERSION;
+        
+        db = migrateDatabase(importedData);
+        save();
+        
+        closePasteBackupModal();
+        alert('✅ Backup restaurado!\n\n- ' + db.users.length + ' usuarios\n- ' + db.categories.length + ' categorías\n- ' + db.badges.length + ' insignias');
+        
+        renderSettings();
+        renderHome();
+        
+    } catch(error) {
+        alert('❌ Error: ' + error.message);
+    }
+}
+
+function importBackup(event) {
+    const file = event.target.files[0];
+    if(!file) return;
+    
+    if(!confirm('⚠️ ¿Estás seguro?\n\nSe reemplazarán TODOS los datos.')) {
+        event.target.value = '';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            if(!importedData.users || !Array.isArray(importedData.users)) {
+                throw new Error('Formato inválido');
+            }
+            
+            if(!importedData.categories) importedData.categories = ['Responsabilidad', 'Amabilidad', 'Respeto'];
+            if(!importedData.globalTasks) importedData.globalTasks = [];
+            if(!importedData.badges) importedData.badges = [];
+            if(!importedData.version) importedData.version = DB_VERSION;
+            
+            db = migrateDatabase(importedData);
+            save();
+            
+            alert('✅ Backup restaurado!');
+            renderSettings();
+            renderHome();
+            
+        } catch(error) {
+            alert('❌ Error: ' + error.message);
+        }
+        event.target.value = '';
+    };
+    reader.readAsText(file);
+}

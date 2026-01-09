@@ -1,52 +1,95 @@
-'use strict';
+// categories.js - Gestión de categorías
 
-/**
- * categories.js
- * Gestión de categorías (crear/editar/borrar y drag & drop)
- */
+let draggedCatIndex = -1;
 
-/** Añade una nueva categoría */
-function addCategory(categoryData) {
-  console.debug('[categories] addCategory', categoryData);
-  // TODO: Añadir categoría a DB y re-render
+function dragCategory(e, index) {
+    draggedCatIndex = index;
+    e.dataTransfer.effectAllowed = 'move';
 }
-window.addCategory = addCategory;
 
-/** Edita una categoría existente */
-function editCategory(categoryId, updates) {
-  console.debug('[categories] editCategory', categoryId, updates);
-  // TODO: Actualizar categoría
+function allowDrop(e) {
+    e.preventDefault();
 }
-window.editCategory = editCategory;
 
-/** Elimina una categoría */
-function deleteCategory(categoryId) {
-  console.debug('[categories] deleteCategory', categoryId);
-  // TODO: Eliminar categoría y reasignar tareas si es necesario
+function dropCategory(e, targetIndex) {
+    e.preventDefault();
+    if(draggedCatIndex === targetIndex) return;
+    
+    const cat = db.categories.splice(draggedCatIndex, 1)[0];
+    db.categories.splice(targetIndex, 0, cat);
+    save();
+    renderTasksTab();
 }
-window.deleteCategory = deleteCategory;
 
-/** Inicia arrastrado de categoría */
-function dragCategory(ev) {
-  console.debug('[categories] dragCategory');
-  ev.dataTransfer.setData('text/plain', ev.target.dataset.categoryId || '');
+function addCategory() {
+    const input = document.getElementById('new-category');
+    const newCat = input.value.trim();
+    
+    if(!newCat) return alert('Escribe el nombre de la categoría');
+    if(db.categories.includes(newCat)) return alert('Esta categoría ya existe');
+    
+    db.categories.push(newCat);
+    db.users.forEach(user => {
+        if(!user.customScores) user.customScores = {};
+        user.customScores[newCat] = 0;
+    });
+    
+    save();
+    input.value = '';
+    renderTasksTab();
 }
-window.dragCategory = dragCategory;
 
-/** Permite soltar en un contenedor */
-function allowDrop(ev) {
-  ev.preventDefault();
+function editCategory(index, newName) {
+    newName = newName.trim();
+    if(!newName) return alert('El nombre no puede estar vacío');
+    if(db.categories.includes(newName) && db.categories[index] !== newName) {
+        return alert('Ya existe una categoría con ese nombre');
+    }
+    
+    const oldName = db.categories[index];
+    db.categories[index] = newName;
+    
+    db.users.forEach(user => {
+        user.tasks.forEach(task => {
+            if(task.scores && task.scores[oldName] !== undefined) {
+                task.scores[newName] = task.scores[oldName];
+                delete task.scores[oldName];
+            }
+        });
+        if(user.customScores && user.customScores[oldName] !== undefined) {
+            user.customScores[newName] = user.customScores[oldName];
+            delete user.customScores[oldName];
+        }
+    });
+    
+    db.globalTasks.forEach(task => {
+        if(task.scores && task.scores[oldName] !== undefined) {
+            task.scores[newName] = task.scores[oldName];
+            delete task.scores[oldName];
+        }
+    });
+    
+    save();
+    renderTasksTab();
 }
-window.allowDrop = allowDrop;
 
-/** Maneja el drop de una categoría */
-function dropCategory(ev) {
-  ev.preventDefault();
-  const categoryId = ev.dataTransfer.getData('text/plain');
-  console.debug('[categories] dropCategory', categoryId);
-  // TODO: Reordenar/colocar categoría según destino
+function deleteCategory(index) {
+    if(!confirm('¿Eliminar esta categoría? Se eliminará de todas las tareas.')) return;
+    
+    const catName = db.categories[index];
+    db.categories.splice(index, 1);
+    
+    db.users.forEach(user => {
+        user.tasks.forEach(task => {
+            if(task.scores) delete task.scores[catName];
+        });
+        if(user.customScores) delete user.customScores[catName];
+    });
+    
+    db.globalTasks.forEach(task => {
+        if(task.scores) delete task.scores[catName];
+    });
+    
+    save();
+    renderTasksTab();
 }
-window.dropCategory = dropCategory;
-// Hacer funciones globales
-window.addCategory = addCategory;
-window.renderCategoriesList = renderCategoriesList;

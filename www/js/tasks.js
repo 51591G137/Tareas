@@ -1,210 +1,303 @@
 // tasks.js - Gestión de tareas globales
 
+function toggleRepeat() {
+    document.getElementById('repeat-options').style.display = 
+        document.getElementById('gt-repeat').checked ? 'block' : 'none';
+}
+
+function toggleEditRepeat() {
+    document.getElementById('edit-repeat-options').style.display = 
+        document.getElementById('edit-task-repeat').checked ? 'block' : 'none';
+}
+
 function saveGlobalTask() {
     const title = document.getElementById('gt-title').value.trim();
-    const date = document.getElementById('gt-date').value || null;
-    const repeat = document.getElementById('gt-repeat').checked;
+    const startDate = document.getElementById('gt-date').value;
+    const isRepeat = document.getElementById('gt-repeat').checked;
+    const assignedUsers = Array.from(document.querySelectorAll('.assign-user:checked')).map(el => parseInt(el.value));
     
-    if (!title) {
-        alert('Por favor, introduce un título para la tarea');
+    if(!title) return alert("Escribe un título para la tarea");
+    if(assignedUsers.length === 0) return alert("Selecciona al menos un usuario");
+
+    let scores = {};
+    document.querySelectorAll('.sc-in').forEach(i => {
+        scores[i.dataset.cat] = parseInt(i.value) || 0;
+    });
+
+    const groupId = 'group_' + Date.now();
+
+    if(!isRepeat) {
+        assignedUsers.forEach(userId => {
+            const user = db.users.find(u => u.id === userId);
+            const taskId = Date.now() + Math.random();
+            
+            const task = {
+                id: taskId,
+                groupId: groupId,
+                title: title,
+                baseTitle: title,
+                date: startDate,
+                status: 'En espera',
+                scores: scores,
+                isRepeat: false,
+                userId: userId
+            };
+            
+            user.tasks.push(task);
+            db.globalTasks.push(task);
+        });
+    } else {
+        const selectedDays = Array.from(document.querySelectorAll('.day-opt:checked')).map(el => parseInt(el.value));
+        if(selectedDays.length === 0) return alert("Selecciona al menos un día de repetición");
+        
+        assignedUsers.forEach(userId => {
+            const user = db.users.find(u => u.id === userId);
+            createRepeatedTasks(user, title, startDate, selectedDays, scores, groupId, userId);
+        });
+    }
+
+    save();
+    alert("Tareas creadas correctamente");
+    
+    document.getElementById('gt-title').value = '';
+    document.getElementById('gt-date').value = '';
+    document.querySelectorAll('.sc-in').forEach(i => i.value = 0);
+    
+    renderTasksTab();
+}
+
+function createRepeatedTasks(user, title, startDateStr, days, scores, groupId, userId) {
+    let current = startDateStr ? new Date(startDateStr + 'T00:00:00') : new Date();
+    current.setHours(0, 0, 0, 0);
+    
+    let count = 0;
+    let attempts = 0;
+    
+    while(count < 3 && attempts < 30) {
+        if(days.includes(current.getDay())) {
+            const dateStr = current.toISOString().split('T')[0];
+            const taskId = Date.now() + Math.random() + count;
+            
+            const task = {
+                id: taskId,
+                groupId: groupId,
+                title: `${title}. ${dayNames[current.getDay()]}`,
+                baseTitle: title,
+                date: dateStr,
+                status: 'En espera',
+                scores: scores,
+                isRepeat: true,
+                repeatDays: days,
+                userId: userId
+            };
+            
+            user.tasks.push(task);
+            db.globalTasks.push(task);
+            count++;
+        }
+        current.setDate(current.getDate() + 1);
+        attempts++;
+    }
+}
+
+function renderTasksTab() {
+    const catList = document.getElementById('categories-list');
+    catList.innerHTML = '';
+    db.categories.forEach((cat, index) => {
+        catList.innerHTML += `
+            <div class="category-item" draggable="true" ondragstart="dragCategory(event, ${index})" ondragover="allowDrop(event)" ondrop="dropCategory(event, ${index})">
+                <span class="drag-handle">☰</span>
+                <input type="text" value="${cat}" onchange="editCategory(${index}, this.value)">
+                <button class="danger small" onclick="deleteCategory(${index})">Eliminar</button>
+            </div>
+        `;
+    });
+
+    const assignList = document.getElementById('gt-user-assign');
+    assignList.innerHTML = '';
+    if(db.users.length === 0) {
+        assignList.innerHTML = '<p style="color:#999; font-size:12px;">Crea usuarios primero</p>';
+    } else {
+        db.users.forEach(u => {
+            assignList.innerHTML += `<label><input type="checkbox" class="assign-user" value="${u.id}"> ${u.name}</label>`;
+        });
+    }
+
+    const scoresDiv = document.getElementById('gt-scores');
+    scoresDiv.innerHTML = '';
+    db.categories.forEach(cat => {
+        scoresDiv.innerHTML += `<label>${cat} <input type="number" class="sc-in" data-cat="${cat}" value="0" min="0"></label>`;
+    });
+
+    renderGlobalTasks();
+}
+
+function renderGlobalTasks() {
+    const container = document.getElementById('global-tasks-list');
+    container.innerHTML = '';
+    
+    const groups = {};
+    db.globalTasks.forEach(gt => {
+        if(!groups[gt.groupId]) groups[gt.groupId] = [];
+        groups[gt.groupId].push(gt);
+    });
+
+    if(Object.keys(groups).length === 0) {
+        container.innerHTML = '<p style="color:#999; font-size:12px;">No hay tareas globales creadas</p>';
         return;
     }
+
+    Object.keys(groups).forEach(groupId => {
+        const tasks = groups[groupId];
+        const firstTask = tasks[0];
+        const assignedUsers = db.users.filter(u => tasks.some(t => t.userId === u.id)).map(u => u.name).join(', ');
+        
+        const dayOrder = [1, 2, 3, 4, 5, 6, 0];
+        const daysText = firstTask.isRepeat ? 
+            dayOrder
+                .filter(d => firstTask.repeatDays.includes(d))
+                .map(d => dayNamesShort[d])
+                .join(', ') 
+            : '';
+        
+        container.innerHTML += `
+            <div class="card admin-task-card" style="position: relative; padding-right: 70px;">
+                <strong>${firstTask.baseTitle || firstTask.title}</strong><br>
+                <small>📅 ${firstTask.date || 'Sin fecha'}</small><br>
+                <small>👥 ${assignedUsers}</small><br>
+                ${firstTask.isRepeat ? '<small>🔄 Repetitiva (' + daysText + ')</small>' : ''}
+                <button class="edit-task-btn" onclick="openEditTaskModal('${groupId}')">✏️</button>
+            </div>
+        `;
+    });
+}
+
+let currentEditTaskGroupId = null;
+
+function openEditTaskModal(groupId) {
+    currentEditTaskGroupId = groupId;
+    const tasks = db.globalTasks.filter(t => t.groupId === groupId);
+    if(tasks.length === 0) return;
     
-    // Obtener usuarios seleccionados
-    const assignedUsers = [];
-    document.querySelectorAll('#gt-user-assign input:checked').forEach(cb => {
-        assignedUsers.push(parseInt(cb.value));
+    const firstTask = tasks[0];
+    
+    document.getElementById('edit-task-title').value = firstTask.baseTitle || firstTask.title;
+    document.getElementById('edit-task-date').value = firstTask.date || '';
+    document.getElementById('edit-task-repeat').checked = firstTask.isRepeat;
+    
+    const editUserAssign = document.getElementById('edit-task-user-assign');
+    editUserAssign.innerHTML = '';
+    const currentUserIds = [...new Set(tasks.map(t => t.userId))];
+    db.users.forEach(u => {
+        const checked = currentUserIds.includes(u.id) ? 'checked' : '';
+        editUserAssign.innerHTML += `<label><input type="checkbox" class="edit-assign-user" value="${u.id}" ${checked}> ${u.name}</label>`;
     });
     
-    if (assignedUsers.length === 0) {
-        alert('Selecciona al menos un usuario');
-        return;
+    if(firstTask.isRepeat) {
+        document.getElementById('edit-repeat-options').style.display = 'block';
+        document.querySelectorAll('.edit-day-opt').forEach(cb => {
+            cb.checked = firstTask.repeatDays.includes(parseInt(cb.value));
+        });
+    } else {
+        document.getElementById('edit-repeat-options').style.display = 'none';
     }
     
-    // Obtener puntuaciones
-    const scores = {};
+    const scoresDiv = document.getElementById('edit-task-scores');
+    scoresDiv.innerHTML = '';
     db.categories.forEach(cat => {
-        const input = document.getElementById(`gt-score-${cat}`);
-        if (input) {
-            const value = parseInt(input.value) || 0;
-            if (value > 0) scores[cat] = value;
+        const val = firstTask.scores[cat] || 0;
+        scoresDiv.innerHTML += `<label>${cat} <input type="number" class="edit-sc-in" data-cat="${cat}" value="${val}" min="0"></label>`;
+    });
+    
+    document.getElementById('edit-task-modal').classList.add('active');
+}
+
+function closeEditModal() {
+    document.getElementById('edit-task-modal').classList.remove('active');
+    currentEditTaskGroupId = null;
+}
+
+function saveEditedTask() {
+    if(!currentEditTaskGroupId) return;
+    
+    const title = document.getElementById('edit-task-title').value.trim();
+    const date = document.getElementById('edit-task-date').value;
+    const isRepeat = document.getElementById('edit-task-repeat').checked;
+    const newUserIds = Array.from(document.querySelectorAll('.edit-assign-user:checked')).map(el => parseInt(el.value));
+    
+    if(!title) return alert("El título no puede estar vacío");
+    if(newUserIds.length === 0) return alert("Selecciona al menos un usuario");
+    
+    let scores = {};
+    document.querySelectorAll('.edit-sc-in').forEach(i => {
+        scores[i.dataset.cat] = parseInt(i.value) || 0;
+    });
+    
+    const oldTasks = db.globalTasks.filter(t => t.groupId === currentEditTaskGroupId);
+    const oldUserIds = [...new Set(oldTasks.map(t => t.userId))];
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+    
+    oldUserIds.forEach(userId => {
+        if(!newUserIds.includes(userId)) {
+            const user = db.users.find(u => u.id === userId);
+            if(user) {
+                user.tasks = user.tasks.filter(t => 
+                    t.groupId !== currentEditTaskGroupId || t.date < todayStr
+                );
+            }
+            db.globalTasks = db.globalTasks.filter(t => 
+                t.groupId !== currentEditTaskGroupId || t.userId !== userId || t.date < todayStr
+            );
         }
     });
     
-    // Obtener días de repetición
-    let repeatDays = [];
-    if (repeat) {
-        document.querySelectorAll('.day-opt:checked').forEach(cb => {
-            repeatDays.push(parseInt(cb.value));
-        });
-    }
-    
-    const groupId = Date.now();
-    const today = new Date();
-    
-    // Crear tareas para cada usuario
-    assignedUsers.forEach(userId => {
+    oldUserIds.filter(id => newUserIds.includes(id)).forEach(userId => {
         const user = db.users.find(u => u.id === userId);
-        if (!user) return;
-        
-        if (repeat && repeatDays.length > 0) {
-            // Crear tareas repetitivas para los próximos 7 días
-            for (let i = 0; i < 7; i++) {
-                const taskDate = new Date(today);
-                taskDate.setDate(today.getDate() + i);
-                
-                if (repeatDays.includes(taskDate.getDay())) {
-                    const taskDateStr = taskDate.toISOString().split('T')[0];
-                    const taskId = groupId + i;
-                    
-                    const task = {
-                        id: taskId,
-                        groupId: groupId,
-                        title: `${title}. ${dayNames[taskDate.getDay()]}`,
-                        baseTitle: title,
-                        date: taskDateStr,
-                        status: 'En espera',
-                        scores: scores,
-                        isRepeat: true,
-                        repeatDays: repeatDays,
-                        userId: userId
-                    };
-                    
-                    if (!user.tasks.some(t => t.groupId === groupId && t.date === taskDateStr)) {
-                        user.tasks.push(task);
-                    }
-                }
-            }
-        } else {
-            // Tarea única
+        if(user) {
+            user.tasks = user.tasks.filter(t => 
+                t.groupId !== currentEditTaskGroupId || t.date < todayStr
+            );
+        }
+        db.globalTasks = db.globalTasks.filter(t => 
+            t.groupId !== currentEditTaskGroupId || t.userId !== userId || t.date < todayStr
+        );
+    });
+    
+    if(!isRepeat) {
+        newUserIds.forEach(userId => {
+            const user = db.users.find(u => u.id === userId);
+            const taskId = Date.now() + Math.random();
+            
             const task = {
-                id: groupId,
-                groupId: groupId,
+                id: taskId,
+                groupId: currentEditTaskGroupId,
                 title: title,
                 baseTitle: title,
                 date: date,
                 status: 'En espera',
                 scores: scores,
                 isRepeat: false,
-                repeatDays: [],
                 userId: userId
             };
             
             user.tasks.push(task);
-        }
-    });
-    
-    // Guardar tarea global
-    const globalTask = {
-        id: groupId,
-        title: title,
-        date: date,
-        repeat: repeat,
-        repeatDays: repeatDays,
-        scores: scores,
-        assignedUsers: assignedUsers,
-        createdAt: new Date().toISOString()
-    };
-    
-    db.globalTasks.push(globalTask);
-    save();
-    
-    // Limpiar formulario
-    document.getElementById('gt-title').value = '';
-    document.getElementById('gt-date').value = '';
-    document.getElementById('gt-repeat').checked = false;
-    toggleRepeat();
-    document.querySelectorAll('#gt-user-assign input').forEach(cb => cb.checked = false);
-    
-    // Actualizar interfaz
-    renderGlobalTasks();
-    alert('Tarea(s) creada(s) correctamente');
-}
-
-function toggleRepeat() {
-    const options = document.getElementById('repeat-options');
-    if (document.getElementById('gt-repeat').checked) {
-        options.style.display = 'block';
+            db.globalTasks.push(task);
+        });
     } else {
-        options.style.display = 'none';
-    }
-}
-
-function toggleEditRepeat() {
-    const options = document.getElementById('edit-repeat-options');
-    if (document.getElementById('edit-task-repeat').checked) {
-        options.style.display = 'block';
-    } else {
-        options.style.display = 'none';
-    }
-}
-
-function renderTasksTab() {
-    // Renderizar lista de categorías con campos de puntuación
-    const scoresContainer = document.getElementById('gt-scores');
-    scoresContainer.innerHTML = '';
-    
-    db.categories.forEach(cat => {
-        scoresContainer.innerHTML += `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <span>${cat}:</span>
-                <input type="number" id="gt-score-${cat}" value="0" min="0" 
-                       style="width: 60px; text-align: center; padding: 2px;">
-            </div>
-        `;
-    });
-    
-    // Renderizar lista de usuarios para asignación
-    const userAssignContainer = document.getElementById('gt-user-assign');
-    userAssignContainer.innerHTML = '';
-    
-    db.users.forEach(user => {
-        userAssignContainer.innerHTML += `
-            <label style="display: block; margin-bottom: 5px;">
-                <input type="checkbox" value="${user.id}"> ${user.name}
-            </label>
-        `;
-    });
-    
-    // Renderizar tareas globales existentes
-    renderGlobalTasks();
-}
-
-function renderGlobalTasks() {
-    const container = document.getElementById('global-tasks-list');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (db.globalTasks.length === 0) {
-        container.innerHTML = '<p style="color: #999; text-align: center;">No hay tareas globales creadas</p>';
-        return;
-    }
-    
-    db.globalTasks.forEach(task => {
-        const assignedNames = task.assignedUsers.map(id => {
-            const user = db.users.find(u => u.id === id);
-            return user ? user.name : 'Desconocido';
-        }).join(', ');
+        const selectedDays = Array.from(document.querySelectorAll('.edit-day-opt:checked')).map(el => parseInt(el.value));
+        if(selectedDays.length === 0) return alert("Selecciona al menos un día");
         
-        container.innerHTML += `
-            <div class="card" style="margin-bottom: 10px;">
-                <h4>${task.title}</h4>
-                <small>Asignada a: ${assignedNames}</small><br>
-                <small>Fecha: ${task.date || 'Sin fecha'}</small><br>
-                <small>${task.repeat ? 'Repetitiva' : 'Única'}</small>
-                <div style="margin-top: 5px;">
-                    <button class="secondary small" onclick="editGlobalTask(${task.id})">Editar</button>
-                    <button class="danger small" onclick="deleteGlobalTask(${task.id})">Eliminar</button>
-                </div>
-            </div>
-        `;
-    });
+        newUserIds.forEach(userId => {
+            const user = db.users.find(u => u.id === userId);
+            createRepeatedTasks(user, title, date || todayStr, selectedDays, scores, currentEditTaskGroupId, userId);
+        });
+    }
+    
+    save();
+    alert("Tarea actualizada");
+    closeEditModal();
+    renderTasksTab();
 }
-
-// Hacer funciones globales
-window.saveGlobalTask = saveGlobalTask;
-window.toggleRepeat = toggleRepeat;
-window.toggleEditRepeat = toggleEditRepeat;
-window.renderTasksTab = renderTasksTab;
-window.renderGlobalTasks = renderGlobalTasks;
