@@ -156,44 +156,72 @@
         <div id="tab-badges" class="config-tab-content" style="display:none;">
             <div class="card">
                 <h4>Crear Logro</h4>
-                <p style="font-size: 12px; color: #666;">Crea logros que se desbloquean al alcanzar puntos</p>
-                
+                <p style="font-size: 12px; color: #666;">Crea logros que se desbloquean al alcanzar puntos o completar misiones</p>
+        
                 <label style="font-size: 12px;">Nombre del logro:</label>
                 <input type="text" id="badge-name" placeholder="Ej: Maestro del Orden">
-                
+        
                 <label style="font-size: 12px;">Emoji/Icono:</label>
                 <input type="text" id="badge-emoji" placeholder="Ej: 🏆 ⭐ 🎖️ 👑" maxlength="2">
-                
+        
                 <label style="font-size: 12px;">Tipo de requisito:</label>
                 <select id="badge-req-type" onchange="toggleBadgeRequirements()">
                     <option value="total">Puntos totales (suma de todos los poderes)</option>
                     <option value="category">Puntos en superpoder específico</option>
                     <option value="multiple">Puntos en múltiples superpoderes</option>
+                    <option value="mission">Completar una misión</option>
+                    <option value="missions">Completar varias misiones</option>
+                    <option value="mission-times">Completar misión varias veces</option>
+                    <option value="badges">Desbloquear otros logros</option>
                 </select>
-                
+        
                 <div id="badge-total-req" style="margin-top: 10px;">
                     <label style="font-size: 12px;">Puntos totales necesarios:</label>
-                    <input type="number" id="badge-total-points" placeholder="Ej: 10" min="1">
+                    <input type="number" id="badge-total-points" placeholder="Ej: 100" min="1">
                 </div>
 
                 <div id="badge-category-req" style="display: none; margin-top: 10px;">
                     <label style="font-size: 12px;">Superpoder:</label>
                     <select id="badge-category"></select>
                     <label style="font-size: 12px;">Puntos necesarios:</label>
-                    <input type="number" id="badge-category-points" placeholder="Ej: 100" min="1">
+                    <input type="number" id="badge-category-points" placeholder="Ej: 50" min="1">
                 </div>
 
                 <div id="badge-multiple-req" style="display: none; margin-top: 10px;">
                     <p style="font-size: 12px;"><strong>Puntos necesarios por superpoder:</strong></p>
                     <div id="badge-multiple-scores"></div>
                 </div>
-                
+
+                <div id="badge-mission-req" style="display: none; margin-top: 10px;">
+                    <label style="font-size: 12px;">Título de la misión:</label>
+                    <input type="text" id="badge-mission-title" placeholder="Ej: 🍽️ Poner la mesa para la cena">
+                    <label style="font-size: 12px;">Veces a completar:</label>
+                    <input type="number" id="badge-mission-times" value="1" min="1">
+                </div>
+
+                <div id="badge-missions-req" style="display: none; margin-top: 10px;">
+                    <label style="font-size: 12px;">Títulos de las misiones (uno por línea):</label>
+                    <textarea id="badge-missions-titles" placeholder="Ej: 🍽️ Poner la mesa para la cena&#10;🦷 Lavarse los dientes" rows="3"></textarea>
+                </div>
+
+                <div id="badge-mission-times-req" style="display: none; margin-top: 10px;">
+                 <label style="font-size: 12px;">Título de la misión:</label>
+                 <input type="text" id="badge-mission-times-title" placeholder="Ej: 🍽️ Poner la mesa para la cena">
+                 <label style="font-size: 12px;">Veces a completar:</label>
+                 <input type="number" id="badge-mission-times-count" value="3" min="1">
+                </div>
+
+                <div id="badge-badges-req" style="display: none; margin-top: 10px;">
+                    <p style="font-size: 12px;"><strong>Logros requeridos (selecciona los que necesite):</strong></p>
+                <div id="badge-badges-list"></div>
+                </div>
+        
                 <button onclick="addBadge()" style="background: var(--success); margin-top: 10px;">+ Añadir Logro</button>
             </div>
 
             <div class="card">
-                <h4>Logros Creados</h4>
-                <div id="badges-list"></div>
+             <h4>Logros Creados</h4>
+              <div id="badges-list"></div>
             </div>
         </div>
 
@@ -358,38 +386,68 @@
     </div>
 
     <!-- Modal editar logro -->
-    <div id="edit-badge-modal" class="modal">
-        <div class="modal-content">
-            <h3>Editar Logro</h3>
-            <input type="text" id="edit-badge-name" placeholder="Nombre">
-            <input type="text" id="edit-badge-emoji" placeholder="Emoji" maxlength="2">
-            
-            <label style="font-size: 12px;">Tipo de requisito:</label>
-            <select id="edit-badge-req-type" onchange="toggleEditBadgeRequirements()">
-                <option value="total">Puntos totales</option>
-                <option value="category">Superpoder específico</option>
-                <option value="multiple">Múltiples superpoderes</option>
-            </select>
-            
-            <div id="edit-badge-total-req" style="margin-top: 10px;">
-                <input type="number" id="edit-badge-total-points" placeholder="Puntos totales" min="1">
-            </div>
+<div id="edit-badge-modal" class="modal">
+    <div class="modal-content">
+        <h3>Editar Logro</h3>
+        <input type="text" id="edit-badge-name" placeholder="Nombre">
+        <input type="text" id="edit-badge-emoji" placeholder="Emoji" maxlength="2">
+        
+        <label style="font-size: 12px;">Tipo de requisito:</label>
+        <select id="edit-badge-req-type" onchange="toggleEditBadgeRequirements()">
+            <option value="total">Puntos totales</option>
+            <option value="category">Superpoder específico</option>
+            <option value="multiple">Múltiples superpoderes</option>
+            <option value="mission">Completar una misión</option>
+            <option value="missions">Completar varias misiones</option>
+            <option value="mission-times">Completar misión varias veces</option>
+            <option value="badges">Desbloquear otros logros</option>
+        </select>
+        
+        <div id="edit-badge-total-req" style="margin-top: 10px;">
+            <label style="font-size: 12px;">Puntos totales:</label>
+            <input type="number" id="edit-badge-total-points" min="1">
+        </div>
 
-            <div id="edit-badge-category-req" style="display: none; margin-top: 10px;">
-                <select id="edit-badge-category"></select>
-                <input type="number" id="edit-badge-category-points" placeholder="Puntos" min="1">
-            </div>
+        <div id="edit-badge-category-req" style="display: none; margin-top: 10px;">
+            <label style="font-size: 12px;">Superpoder:</label>
+            <select id="edit-badge-category"></select>
+            <label style="font-size: 12px;">Puntos:</label>
+            <input type="number" id="edit-badge-category-points" min="1">
+        </div>
 
-            <div id="edit-badge-multiple-req" style="display: none; margin-top: 10px;">
-                <div id="edit-badge-multiple-scores"></div>
-            </div>
+        <div id="edit-badge-multiple-req" style="display: none; margin-top: 10px;">
+            <div id="edit-badge-multiple-scores"></div>
+        </div>
 
-            <div class="modal-buttons">
-                <button onclick="saveEditedBadge()">Guardar</button>
-                <button class="secondary" onclick="closeEditBadgeModal()">Cancelar</button>
-            </div>
+        <div id="edit-badge-mission-req" style="display: none; margin-top: 10px;">
+            <label style="font-size: 12px;">Título de la misión:</label>
+            <input type="text" id="edit-badge-mission-title">
+            <label style="font-size: 12px;">Veces:</label>
+            <input type="number" id="edit-badge-mission-times" min="1">
+        </div>
+
+        <div id="edit-badge-missions-req" style="display: none; margin-top: 10px;">
+            <label style="font-size: 12px;">Títulos (uno por línea):</label>
+            <textarea id="edit-badge-missions-titles" rows="3"></textarea>
+        </div>
+
+        <div id="edit-badge-mission-times-req" style="display: none; margin-top: 10px;">
+            <label style="font-size: 12px;">Título de la misión:</label>
+            <input type="text" id="edit-badge-mission-times-title">
+            <label style="font-size: 12px;">Veces:</label>
+            <input type="number" id="edit-badge-mission-times-count" min="1">
+        </div>
+
+        <div id="edit-badge-badges-req" style="display: none; margin-top: 10px;">
+            <div id="edit-badge-badges-list"></div>
+        </div>
+
+        <div class="modal-buttons">
+            <button onclick="saveEditedBadge()">Guardar</button>
+            <button class="secondary" onclick="closeEditBadgeModal()">Cancelar</button>
         </div>
     </div>
+</div>
 
     <!-- Scripts principales -->
     <script src="js/database.js"></script>

@@ -459,3 +459,13 @@ function checkBadgeUnlocked(badge, user) {
     
     return false;
 }
+// Inicializar cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Si la pestaña de logros está visible al cargar, renderizarla
+    setTimeout(() => {
+        const badgesTab = document.getElementById('tab-badges');
+        if (badgesTab && badgesTab.style.display !== 'none') {
+            renderBadgesTab();
+        }
+    }, 100);
+});
