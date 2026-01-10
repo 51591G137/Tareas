@@ -62,6 +62,9 @@ function completeMission() {
     
     mission.status = 'Terminada';
     
+    // Registrar en el log de misiones completadas
+    logCompletedMission(mission);
+    
     // Generar siguiente tarea repetitiva si aplica
     if(mission.isRepeat && mission.repeatDays) {
         generateNextRepeatingMission(mission);
