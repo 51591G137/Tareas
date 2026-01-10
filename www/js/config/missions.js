@@ -244,19 +244,49 @@ function renderGlobalMissions() {
     });
 }
 
+// Modificar la función renderMissionTypes para incluir botones de reordenamiento
 function renderMissionTypes() {
     const container = document.getElementById('mission-types-list');
     container.innerHTML = '';
     
     db.missionTypes.forEach((type, index) => {
         container.innerHTML += `
-            <div class="mission-type-item">
+            <div class="mission-type-item" style="display: flex; align-items: center; gap: 5px; margin-bottom: 8px;">
+                <div class="move-buttons">
+                    <button class="move-btn" onclick="moveMissionTypeUp(${index})" ${index === 0 ? 'disabled' : ''}>↑</button>
+                    <button class="move-btn" onclick="moveMissionTypeDown(${index})" ${index === db.missionTypes.length - 1 ? 'disabled' : ''}>↓</button>
+                </div>
                 <input type="text" value="${type.icon}" onchange="editMissionTypeIcon(${index}, this.value)" style="width: 50px; text-align: center;" maxlength="2">
                 <input type="text" value="${type.name}" onchange="editMissionTypeName(${index}, this.value)" style="flex: 1;">
                 ${db.missionTypes.length > 1 ? `<button class="danger small" onclick="deleteMissionType(${index})">Eliminar</button>` : ''}
             </div>
         `;
     });
+}
+
+// Agregar estas funciones para reordenar tipos de misiones
+function moveMissionTypeUp(index) {
+    if (index <= 0) return;
+    
+    // Intercambiar posiciones
+    const temp = db.missionTypes[index - 1];
+    db.missionTypes[index - 1] = db.missionTypes[index];
+    db.missionTypes[index] = temp;
+    
+    save();
+    renderMissionsTab();
+}
+
+function moveMissionTypeDown(index) {
+    if (index >= db.missionTypes.length - 1) return;
+    
+    // Intercambiar posiciones
+    const temp = db.missionTypes[index + 1];
+    db.missionTypes[index + 1] = db.missionTypes[index];
+    db.missionTypes[index] = temp;
+    
+    save();
+    renderMissionsTab();
 }
 
 function addMissionType() {

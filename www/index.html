@@ -51,78 +51,88 @@
 
         <!-- TAB: Misiones -->
         <div id="tab-missions" class="config-tab-content" style="display:none;">
-            <div class="card">
-                <h4>Tipos de Misiones</h4>
-                <p style="font-size: 12px; color: #666;">Gestiona los tipos de misiones disponibles</p>
-                <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-                    <input type="text" id="new-mission-type-icon" placeholder="Emoji" maxlength="2" style="width: 60px;">
-                    <input type="text" id="new-mission-type-name" placeholder="Nombre del tipo" style="flex: 1;">
-                    <button onclick="addMissionType()" style="width: auto;">+ Añadir</button>
+            <div class="card expandable-section">
+                <div class="section-header" onclick="toggleSection('mission-types-section')">
+                    <h4 style="display: inline-block; margin: 0;">Tipos de Misiones</h4>
+                    <span id="mission-types-toggle" style="float: right; font-size: 14px;">▼</span>
                 </div>
-                <div id="mission-types-list"></div>
+                <div id="mission-types-section" class="section-content expanded">
+                    <p style="font-size: 12px; color: #666; margin-top: 10px;">Gestiona los tipos de misiones disponibles</p>
+                    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                        <input type="text" id="new-mission-type-icon" placeholder="Emoji" maxlength="2" style="width: 60px;">
+                        <input type="text" id="new-mission-type-name" placeholder="Nombre del tipo" style="flex: 1;">
+                        <button onclick="addMissionType()" style="width: auto;">+ Añadir</button>
+                    </div>
+                    <div id="mission-types-list"></div>
+                </div>
             </div>
 
-            <div class="card">
-                <h4>Crear Misión Global</h4>
-                <input type="text" id="gm-title" placeholder="Título de la misión">
-                <textarea id="gm-description" placeholder="Descripción de la misión (opcional)" style="width: 100%; min-height: 60px; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;"></textarea>
-                
-                <label style="font-size: 12px; color: #666; margin-top: 10px;">Tipo de misión:</label>
-                <select id="gm-type"></select>
-                
-                <label style="font-size: 12px; color: #666; margin-top: 10px;">Fecha de inicio:</label>
-                <input type="date" id="gm-start-date">
-                
-                <label style="font-size: 12px; color: #666; margin-top: 5px;">Fecha de fin:</label>
-                <input type="date" id="gm-end-date">
-                
-                <div style="margin: 10px 0;">
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" id="gm-time-range" onchange="toggleTimeRange()" style="width: auto; margin: 0;"> 
-                        ¿Tiene horario específico?
-                    </label>
+            <div class="card expandable-section">
+                <div class="section-header" onclick="toggleSection('create-mission-section')">
+                    <h4 style="display: inline-block; margin: 0;">Crear Misión Global</h4>
+                    <span id="create-mission-toggle" style="float: right; font-size: 14px;">▼</span>
                 </div>
-
-                <div id="time-range-options" style="display:none;">
-                    <label style="font-size: 12px;">Hora de inicio:</label>
-                    <input type="time" id="gm-time-start">
-                    <label style="font-size: 12px;">Hora de fin:</label>
-                    <input type="time" id="gm-time-end">
-                </div>
-                
-                <p style="margin: 10px 0 5px 0;"><strong>Asignar a:</strong></p>
-                <div id="gm-user-assign" class="user-checkbox-list"></div>
-
-                <div style="margin: 10px 0;">
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" id="gm-repeat" onchange="toggleRepeat()" style="width: auto; margin: 0;"> 
-                        ¿Se repite?
-                    </label>
-                </div>
-
-                <div id="repeat-options" style="display:none;">
-                    <p style="margin: 5px 0;"><strong>Días de repetición:</strong></p>
-                    <div class="days-selector">
-                        <label class="day-check">L<input type="checkbox" class="day-opt" value="1"></label>
-                        <label class="day-check">M<input type="checkbox" class="day-opt" value="2"></label>
-                        <label class="day-check">X<input type="checkbox" class="day-opt" value="3"></label>
-                        <label class="day-check">J<input type="checkbox" class="day-opt" value="4"></label>
-                        <label class="day-check">V<input type="checkbox" class="day-opt" value="5"></label>
-                        <label class="day-check">S<input type="checkbox" class="day-opt" value="6"></label>
-                        <label class="day-check">D<input type="checkbox" class="day-opt" value="0"></label>
+                <div id="create-mission-section" class="section-content expanded">
+                    <input type="text" id="gm-title" placeholder="Título de la misión">
+                    <textarea id="gm-description" placeholder="Descripción de la misión (opcional)" style="width: 100%; min-height: 60px; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;"></textarea>
+                    
+                    <label style="font-size: 12px; color: #666; margin-top: 10px;">Tipo de misión:</label>
+                    <select id="gm-type"></select>
+                    
+                    <label style="font-size: 12px; color: #666; margin-top: 10px;">Fecha de inicio:</label>
+                    <input type="date" id="gm-start-date">
+                    
+                    <label style="font-size: 12px; color: #666; margin-top: 5px;">Fecha de fin:</label>
+                    <input type="date" id="gm-end-date">
+                    
+                    <div style="margin: 10px 0;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="gm-time-range" onchange="toggleTimeRange()" style="width: auto; margin: 0;"> 
+                            ¿Tiene horario específico?
+                        </label>
                     </div>
-                </div>
 
-                <h4 style="margin-top: 15px;">Recompensas (Puntos de Poder)</h4>
-                <div id="gm-scores"></div>
-                
-                <h4 style="margin-top: 15px;">Mensajes</h4>
-                <label style="font-size: 12px;">Mensaje al seleccionar:</label>
-                <input type="text" id="gm-select-msg" placeholder="¡Excelente elección, héroe! 🦸">
-                <label style="font-size: 12px;">Mensaje al completar:</label>
-                <input type="text" id="gm-complete-msg" placeholder="¡Misión cumplida! Has ganado experiencia 🌟">
-                
-                <button onclick="saveGlobalMission()" style="margin-top:10px; background: var(--success);">Crear Misiones</button>
+                    <div id="time-range-options" style="display:none;">
+                        <label style="font-size: 12px;">Hora de inicio:</label>
+                        <input type="time" id="gm-time-start">
+                        <label style="font-size: 12px;">Hora de fin:</label>
+                        <input type="time" id="gm-time-end">
+                    </div>
+                    
+                    <p style="margin: 10px 0 5px 0;"><strong>Asignar a:</strong></p>
+                    <div id="gm-user-assign" class="user-checkbox-list"></div>
+
+                    <div style="margin: 10px 0;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="gm-repeat" onchange="toggleRepeat()" style="width: auto; margin: 0;"> 
+                            ¿Se repite?
+                        </label>
+                    </div>
+
+                    <div id="repeat-options" style="display:none;">
+                        <p style="margin: 5px 0;"><strong>Días de repetición:</strong></p>
+                        <div class="days-selector">
+                            <label class="day-check">L<input type="checkbox" class="day-opt" value="1"></label>
+                            <label class="day-check">M<input type="checkbox" class="day-opt" value="2"></label>
+                            <label class="day-check">X<input type="checkbox" class="day-opt" value="3"></label>
+                            <label class="day-check">J<input type="checkbox" class="day-opt" value="4"></label>
+                            <label class="day-check">V<input type="checkbox" class="day-opt" value="5"></label>
+                            <label class="day-check">S<input type="checkbox" class="day-opt" value="6"></label>
+                            <label class="day-check">D<input type="checkbox" class="day-opt" value="0"></label>
+                        </div>
+                    </div>
+
+                    <h4 style="margin-top: 15px;">Recompensas (Puntos de Poder)</h4>
+                    <div id="gm-scores"></div>
+                    
+                    <h4 style="margin-top: 15px;">Mensajes</h4>
+                    <label style="font-size: 12px;">Mensaje al seleccionar:</label>
+                    <input type="text" id="gm-select-msg" placeholder="¡Excelente elección, héroe! 🦸">
+                    <label style="font-size: 12px;">Mensaje al completar:</label>
+                    <input type="text" id="gm-complete-msg" placeholder="¡Misión cumplida! Has ganado experiencia ✨">
+                    
+                    <button onclick="saveGlobalMission()" style="margin-top:10px; background: var(--success);">Crear Misiones</button>
+                </div>
             </div>
 
             <div class="card">

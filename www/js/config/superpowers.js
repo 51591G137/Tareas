@@ -1,5 +1,57 @@
 // superpowers.js - Gestión de superpoderes y poderes
 
+// Funciones de movimiento para reordenar
+function moveSuperpowerUp(index) {
+    if (index <= 0) return;
+    
+    // Intercambiar posiciones
+    const temp = db.superpowers[index - 1];
+    db.superpowers[index - 1] = db.superpowers[index];
+    db.superpowers[index] = temp;
+    
+    save();
+    renderSuperpowersTab();
+}
+
+function moveSuperpowerDown(index) {
+    if (index >= db.superpowers.length - 1) return;
+    
+    // Intercambiar posiciones
+    const temp = db.superpowers[index + 1];
+    db.superpowers[index + 1] = db.superpowers[index];
+    db.superpowers[index] = temp;
+    
+    save();
+    renderSuperpowersTab();
+}
+
+function movePowerUp(spIndex, powerIndex) {
+    if (powerIndex <= 0) return;
+    
+    // Intercambiar posiciones
+    const powers = db.superpowers[spIndex].powers;
+    const temp = powers[powerIndex - 1];
+    powers[powerIndex - 1] = powers[powerIndex];
+    powers[powerIndex] = temp;
+    
+    save();
+    renderSuperpowersTab();
+}
+
+function movePowerDown(spIndex, powerIndex) {
+    if (powerIndex >= db.superpowers[spIndex].powers.length - 1) return;
+    
+    // Intercambiar posiciones
+    const powers = db.superpowers[spIndex].powers;
+    const temp = powers[powerIndex + 1];
+    powers[powerIndex + 1] = powers[powerIndex];
+    powers[powerIndex] = temp;
+    
+    save();
+    renderSuperpowersTab();
+}
+
+// Funciones principales de gestión
 function addSuperpower() {
     const input = document.getElementById('new-superpower');
     const newSp = input.value.trim();
@@ -189,11 +241,15 @@ function renderSuperpowersTab() {
         
         spCard.innerHTML = `
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <div class="move-buttons">
+                    <button class="move-btn" onclick="moveSuperpowerUp(${spIndex})" ${spIndex === 0 ? 'disabled' : ''}>↑</button>
+                    <button class="move-btn" onclick="moveSuperpowerDown(${spIndex})" ${spIndex === db.superpowers.length - 1 ? 'disabled' : ''}>↓</button>
+                </div>
                 <input type="text" value="${sp.name}" onchange="editSuperpowerName(${spIndex}, this.value)" style="flex: 1; font-weight: bold;">
                 <button class="danger small" onclick="deleteSuperpower(${spIndex})">Eliminar</button>
             </div>
-            <div class="powers-list" style="margin-left: 20px;"></div>
-            <div style="display: flex; gap: 5px; margin-top: 10px; margin-left: 20px;">
+            <div class="powers-list" style="margin-left: 40px;"></div>
+            <div style="display: flex; gap: 5px; margin-top: 10px; margin-left: 40px;">
                 <input type="text" id="new-power-${spIndex}" placeholder="Nuevo poder" style="flex: 1;">
                 <button class="small" onclick="addPowerToSuperpower(${spIndex})" style="width: auto;">+ Añadir</button>
             </div>
@@ -202,7 +258,11 @@ function renderSuperpowersTab() {
         const powersList = spCard.querySelector('.powers-list');
         sp.powers.forEach((power, pIndex) => {
             powersList.innerHTML += `
-                <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 5px;">
+                <div class="power-item">
+                    <div class="move-buttons">
+                        <button class="move-btn" onclick="movePowerUp(${spIndex}, ${pIndex})" ${pIndex === 0 ? 'disabled' : ''}>↑</button>
+                        <button class="move-btn" onclick="movePowerDown(${spIndex}, ${pIndex})" ${pIndex === sp.powers.length - 1 ? 'disabled' : ''}>↓</button>
+                    </div>
                     <span>⚡</span>
                     <input type="text" value="${power}" onchange="editPowerName(${spIndex}, ${pIndex}, this.value)" style="flex: 1; font-size: 14px;">
                     ${sp.powers.length > 1 ? `<button class="danger small" onclick="deletePower(${spIndex}, ${pIndex})">×</button>` : ''}

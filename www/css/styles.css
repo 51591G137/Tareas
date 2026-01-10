@@ -792,3 +792,82 @@ button.settings-btn {
 .power-detail-item span:last-child {
     color: var(--success);
 }
+
+/* Agregar al final del archivo */
+
+/* Estilos para secciones expandibles */
+.expandable-section {
+    margin-bottom: 15px;
+}
+
+.section-header {
+    background: #f5f5f5;
+    padding: 12px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid #e0e0e0;
+    margin-bottom: 0;
+}
+
+.section-header:hover {
+    background: #e8e8e8;
+}
+
+.section-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    padding: 0 15px;
+}
+
+.section-content.expanded {
+    max-height: 2000px; /* Un valor suficientemente grande */
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Estilos para botones de reordenamiento */
+.move-buttons {
+    display: flex;
+    gap: 5px;
+    margin-left: 5px;
+}
+
+.move-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.move-btn:hover {
+    background: #f0f0f0;
+    border-color: #ccc;
+}
+
+.move-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Para los superpoderes */
+.superpower-card .move-buttons {
+    margin-right: 5px;
+}
+
+/* Para los poderes dentro de superpoderes */
+.power-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 8px;
+}

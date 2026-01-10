@@ -68,3 +68,42 @@ function logout() {
     currentUser = null;
     navTo('screen-home');
 }
+
+// --- Funciones para secciones expandibles ---
+
+function toggleSection(sectionId) {
+    const content = document.getElementById(sectionId);
+    const toggle = document.getElementById(sectionId + '-toggle');
+    
+    content.classList.toggle('expanded');
+    
+    if (content.classList.contains('expanded')) {
+        toggle.textContent = '▲';
+    } else {
+        toggle.textContent = '▼';
+    }
+    
+    // Forzar reflow para asegurar la animación
+    content.style.maxHeight = content.classList.contains('expanded') ? content.scrollHeight + 'px' : '0';
+}
+
+// Inicialización de secciones expandibles
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar secciones expandibles
+    setTimeout(() => {
+        const missionTypesSection = document.getElementById('mission-types-section');
+        const createMissionSection = document.getElementById('create-mission-section');
+        
+        if (missionTypesSection) {
+            missionTypesSection.classList.add('expanded');
+            const toggle = document.getElementById('mission-types-toggle');
+            if (toggle) toggle.textContent = '▲';
+        }
+        
+        if (createMissionSection) {
+            createMissionSection.classList.add('expanded');
+            const toggle = document.getElementById('create-mission-toggle');
+            if (toggle) toggle.textContent = '▲';
+        }
+    }, 100);
+});
