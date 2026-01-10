@@ -1,14 +1,14 @@
-// database.js - Gestión de base de datos versión 6
-const DB_VERSION = 6;
+// database.js - Base de datos Elite Héroes (Versión Limpia)
+const DB_VERSION = 1;
 
 let db = loadDatabase();
 
 function loadDatabase() {
     const stored = localStorage.getItem('eliteDB');
-    let data;
     
+    // Si no hay datos almacenados, crear estructura inicial
     if(!stored) {
-        data = { 
+        return {
             version: DB_VERSION,
             users: [], 
             superpowers: [
@@ -46,14 +46,14 @@ function loadDatabase() {
                 { id: 2018, groupId: 'preset_18', title: '🛏️ Hacer la cama', baseTitle: '🛏️ Hacer la cama', description: 'Arreglar tu cama cada mañana', type: 'daily', scores: { 'Justicia': { 'Contribución': 10, 'Equipo': 5 }, 'Coraje': { 'Voluntad': 5, 'Autonomía': 10 } }, selectMessage: '¡Excelente elección, héroe! 🦸', completeMessage: '¡Misión cumplida! Has ganado experiencia ✨' }
             ],
             badges: [
-                { id: 1001, name: 'Guardián de la Cortesía', emoji: '🚪', requirementType: 'mission', missionRequirement: { missionTitle: 'Sujetar la puerta', times: 1 } },
-                { id: 1002, name: 'Repartidor de Cariño', emoji: '🤗', requirementType: 'mission', missionRequirement: { missionTitle: 'Dar un abrazo espontáneo', times: 1 } },
-                { id: 1003, name: 'Corazón Empático', emoji: '💝', requirementType: 'mission', missionRequirement: { missionTitle: 'Consolar a alguien triste', times: 1 } },
-                { id: 1004, name: 'Generosidad de Oro', emoji: '🏆', requirementType: 'mission', missionRequirement: { missionTitle: 'Ceder el turno o un juguete', times: 1 } },
-                { id: 1005, name: 'Héroe del Orden Común', emoji: '🦸', requirementType: 'mission', missionRequirement: { missionTitle: 'Recoger algo que no es suyo', times: 1 } },
-                { id: 1006, name: 'Iniciativa Brillante', emoji: '💡', requirementType: 'mission', missionRequirement: { missionTitle: 'Ayudar sin que se lo pidan', times: 1 } },
-                { id: 1007, name: 'Líder Justo', emoji: '⚖️', requirementType: 'mission', missionRequirement: { missionTitle: 'Explicar una regla de un juego', times: 1 } },
-                { id: 1008, name: 'Valentía del Corazón', emoji: '❤️', requirementType: 'mission', missionRequirement: { missionTitle: 'Pedir perdón tras un error', times: 1 } },
+                { id: 1001, name: 'Guardián de la Cortesía', emoji: '🚪', requirementType: 'total', totalPoints: 100 },
+                { id: 1002, name: 'Repartidor de Cariño', emoji: '🤗', requirementType: 'category', categoryRequirement: { category: 'Justicia', points: 50 } },
+                { id: 1003, name: 'Corazón Empático', emoji: '💝', requirementType: 'multiple', multipleRequirements: { 'Justicia': 30, 'Sabiduría': 20 } },
+                { id: 1004, name: 'Generosidad de Oro', emoji: '🏆', requirementType: 'mission', missionRequirement: { missionTitle: '🍽️ Poner la mesa para la cena', times: 1 } },
+                { id: 1005, name: 'Héroe del Orden Común', emoji: '🦸', requirementType: 'missions', missionsRequirement: ['🦷 Lavarse los dientes (mañana)', '🦷 Lavarse los dientes (tarde)', '🦷 Lavarse los dientes (noche)'] },
+                { id: 1006, name: 'Iniciativa Brillante', emoji: '💡', requirementType: 'mission-times', missionTimesRequirement: { missionTitle: '🍽️ Poner la mesa para la cena', times: 3 } },
+                { id: 1007, name: 'Líder Justo', emoji: '⚖️', requirementType: 'badges', badgesRequirement: [1001, 1002] },
+                { id: 1008, name: 'Valentía del Corazón', emoji: '❤️', requirementType: 'mission', missionRequirement: { missionTitle: 'Consolar a alguien triste', times: 1 } },
                 { id: 1009, name: 'Maestro de la Calma', emoji: '🧘', requirementType: 'mission', missionRequirement: { missionTitle: 'Esperar con paciencia', times: 1 } },
                 { id: 1010, name: 'Respeto Silencioso', emoji: '🤫', requirementType: 'mission', missionRequirement: { missionTitle: 'Bajar el volumen si alguien descansa', times: 1 } },
                 { id: 1011, name: 'Buscador de Verdades', emoji: '🔍', requirementType: 'mission', missionRequirement: { missionTitle: 'Hacer una pregunta profunda', times: 1 } },
@@ -66,36 +66,35 @@ function loadDatabase() {
                 { id: 1018, name: 'Voz de la Honestidad', emoji: '🗣️', requirementType: 'mission', missionRequirement: { missionTitle: 'Decir la verdad aunque sea difícil', times: 1 } }
             ]
         };
-    } else {
-        data = JSON.parse(stored);
-        
-        // Migración a v6
-        if(!data.version || data.version < 6) {
-            if(!data.users) data.users = [];
-            if(!data.superpowers) data.superpowers = [];
-            if(!data.missionTypes) data.missionTypes = [];
-            if(!data.globalMissions) data.globalMissions = [];
-            if(!data.badges) data.badges = [];
-            
-            data.users.forEach(user => {
-                if(!user.powerScores) {
-                    user.powerScores = {};
-                    data.superpowers.forEach(sp => {
-                        user.powerScores[sp.name] = {};
-                        sp.powers.forEach(power => {
-                            user.powerScores[sp.name][power] = 0;
-                        });
-                    });
-                }
-                if(!user.missions) user.missions = [];
-                if(!user.completedMissionsLog) user.completedMissionsLog = [];
-                if(!user.unlockedBadges) user.unlockedBadges = [];
-            });
-            
-            data.version = 6;
-        }
     }
     
+    // Si hay datos almacenados, cargarlos directamente
+    const data = JSON.parse(stored);
+    
+    // Solo asegurar que existan las propiedades básicas si faltan
+    if (!data.users) data.users = [];
+    if (!data.superpowers) data.superpowers = [];
+    if (!data.missionTypes) data.missionTypes = [];
+    if (!data.globalMissions) data.globalMissions = [];
+    if (!data.badges) data.badges = [];
+    
+    // Inicializar propiedades faltantes en usuarios existentes
+    data.users.forEach(user => {
+        if (!user.powerScores) {
+            user.powerScores = {};
+            data.superpowers.forEach(sp => {
+                user.powerScores[sp.name] = {};
+                sp.powers.forEach(power => {
+                    user.powerScores[sp.name][power] = 0;
+                });
+            });
+        }
+        if (!user.missions) user.missions = [];
+        if (!user.completedMissionsLog) user.completedMissionsLog = [];
+        if (!user.unlockedBadges) user.unlockedBadges = [];
+    });
+    
+    data.version = DB_VERSION;
     return data;
 }
 
@@ -104,7 +103,7 @@ function save() {
     localStorage.setItem('eliteDB', JSON.stringify(db)); 
 }
 
-// Verificar misiones expiradas
+// Verificar misiones expiradas (mantenido como solicitado)
 function checkExpiredMissions() {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
@@ -138,8 +137,10 @@ function checkExpiredMissions() {
     save();
 }
 
+// Iniciar verificación periódica de misiones expiradas
 setInterval(checkExpiredMissions, 60000);
 checkExpiredMissions();
 
+// Exponer al scope global
 window.db = db;
 window.save = save;
